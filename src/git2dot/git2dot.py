@@ -12,11 +12,11 @@ DEFAULT_RANGE = '--all --topo-order'  # --range
 
 
 class Node:
-    '''
+    """
     Each node represents a commit.
     A commit can have zero or parents.
     A parent link is created each time a merge is done.
-    '''
+    """
 
     m_list = []
     m_map = {}
@@ -27,7 +27,7 @@ class Node:
         self.m_cid = cid
         self.m_idx = len(Node.m_list)
         self.m_parents = pids
-        self.m_label = ''
+        self.m_label = ""
         self.m_branches = branches
         self.m_tags = tags
         self.m_children = []
@@ -48,7 +48,12 @@ class Node:
         Node.m_map[cid] = self
 
     def is_squashable(self):
-        if len(self.m_branches) > 0 or len(self.m_tags) > 0 or len(self.m_parents) > 1 or len(self.m_children) > 1:
+        if (
+            len(self.m_branches) > 0
+            or len(self.m_tags) > 0
+            or len(self.m_parents) > 1
+            or len(self.m_children) > 1
+        ):
             return False
         return True
 
@@ -57,7 +62,11 @@ class Node:
             return False
         if self.m_chain_tail is None:
             return False
-        return self.m_chain_size > 0 and self.m_cid != self.m_chain_head.m_cid and self.m_cid != self.m_chain_tail.m_cid
+        return (
+            self.m_chain_size > 0
+            and self.m_cid != self.m_chain_head.m_cid
+            and self.m_cid != self.m_chain_tail.m_cid
+        )
 
     def is_squashed_head(self):
         if self.m_chain_head is None:
@@ -108,9 +117,9 @@ class Node:
 
     @staticmethod
     def squash():
-        '''
+        """
         Squash nodes that in a chain of single commits.
-        '''
+        """
         update = {}
         for nd in Node.m_list:
             head = nd.find_chain_head()
@@ -148,53 +157,52 @@ class Node:
     def rm_parent(self, pcid):
         while pcid in self.m_parents:
             i = self.m_parents.index(pcid)
-            self.m_parents = self.m_parents[:i] + self.m_parents[i+1:]
+            self.m_parents = self.m_parents[:i] + self.m_parents[i + 1 :]
 
     def rm_child(self, ccid):
         for i, cnd in reversed(list(enumerate(self.m_children))):
             if cnd.m_cid == ccid:
-                self.m_children = self.m_children[:i] + self.m_children[i+1:]
+                self.m_children = self.m_children[:i] + self.m_children[i + 1 :]
 
 
 def info(msg, lev=1):
-    ''' Print an informational message with the source line number. '''
-    print('// INFO:{} {}'.format(inspect.stack()[lev][2], msg))
+    """Print an informational message with the source line number."""
+    print("// INFO:{} {}".format(inspect.stack()[lev][2], msg))
 
 
 def infov(opts, msg, lev=1):
-    ''' Print an informational message with the source line number. '''
+    """Print an informational message with the source line number."""
     if opts.verbose > 0:
-        print('// INFO:{} {}'.format(inspect.stack()[lev][2], msg))
+        print("// INFO:{} {}".format(inspect.stack()[lev][2], msg))
 
 
 def warn(msg, lev=1):
-    ''' Print a warning  message with the source line number. '''
-    print('// WARNING:{} {}'.format(inspect.stack()[lev][2], msg))
+    """Print a warning  message with the source line number."""
+    print("// WARNING:{} {}".format(inspect.stack()[lev][2], msg))
 
 
 def err(msg, lev=1):
-    ''' Print an error message and exit. '''
-    sys.stderr.write('// ERROR:{} {}\n'.format(inspect.stack()[lev][2], msg))
+    """Print an error message and exit."""
+    sys.stderr.write("// ERROR:{} {}\n".format(inspect.stack()[lev][2], msg))
     sys.exit(1)
 
 
 def runcmd_long(cmd, show_output=True):
-    '''
+    """
     Execute a long running shell command with no inputs.
     Capture output and exit status.
     For long running commands, this implementation displays output
     information as it is captured.
     For fast running commands it would be better to use
     subprocess.check_output.
-    '''
-    proc = subprocess.Popen(cmd,
-                            shell=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+    """
+    proc = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
 
     # Read the output 1 character at a time so that it can be
     # displayed in real time.
-    output = ''
+    output = ""
     while not proc.returncode:
         char = proc.stdout.read(1)
         if not char:
@@ -203,7 +211,7 @@ def runcmd_long(cmd, show_output=True):
         else:
             try:
                 # There is probably a better way to do this.
-                char = char.decode('utf-8')
+                char = char.decode("utf-8")
             except UnicodeDecodeError:
                 continue
             output += char
@@ -215,10 +223,10 @@ def runcmd_long(cmd, show_output=True):
 
 
 def runcmd_short(cmd, show_output=True):
-    '''
+    """
     Execute a short running shell command with no inputs.
     Capture output and exit status.
-    '''
+    """
     try:
         output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
         status = 0
@@ -233,83 +241,87 @@ def runcmd_short(cmd, show_output=True):
 
 
 def runcmd(cmd, show_output=True):
-    '''
+    """
     Wrapper for run commands.
-    '''
+    """
     return runcmd_long(cmd, show_output)
 
 
 def read(opts):
-    '''
+    """
     Read the input data.
     The input can come from two general sources: the output of a git
     command or a file that contains the output from a git comment
     (-i).
-    '''
+    """
     # Run the git command.
-    infov(opts, 'reading git repo data')
-    out = ''
-    if opts.input != '':
+    infov(opts, "reading git repo data")
+    out = ""
+    if opts.input != "":
         # The user specified a file that contains the input data
         # via the -i option.
         try:
-            with open(opts.input, 'r') as ifp:
+            with open(opts.input, "r") as ifp:
                 out = ifp.read()
         except IOError as e:
-            err('input read failed: {}'.format(e))
+            err("input read failed: {}".format(e))
     else:
         # The user chose to run a git command.
         cmd = opts.gitcmd
-        if cmd.replace('%%', '%') == DEFAULT_GITCMD:
-            cmd = cmd.replace('%%', '%')
-            if opts.cnode_label != '':
+        if cmd.replace("%%", "%") == DEFAULT_GITCMD:
+            cmd = cmd.replace("%%", "%")
+            if opts.cnode_label != "":
                 x = cmd.rindex('"')
-                cmd = cmd[:x] + '%n{}|{}'.format(opts.cnode_label_recid, opts.cnode_label) + cmd[x:]
+                cmd = (
+                    cmd[:x]
+                    + "%n{}|{}".format(opts.cnode_label_recid, opts.cnode_label)
+                    + cmd[x:]
+                )
 
-            if opts.since != '':
+            if opts.since != "":
                 cmd += ' --since="{}"'.format(opts.since)
-            if opts.until != '':
+            if opts.until != "":
                 cmd += ' --until="{}"'.format(opts.until)
-            if opts.range != '':
-                cmd += ' {}'.format(opts.range)
+            if opts.range != "":
+                cmd += " {}".format(opts.range)
         else:
             # If the user specified a custom command then we
             # do not allow the user options to affect it.
-            if opts.cnode_label != '':
-                warn('-l <label> ignored when -g is specified')
-            if opts.since != '':
-                warn('--since ignored when -g is specified')
-            if opts.until != '':
-                warn('--until ignored when -g is specified')
+            if opts.cnode_label != "":
+                warn("-l <label> ignored when -g is specified")
+            if opts.since != "":
+                warn("--since ignored when -g is specified")
+            if opts.until != "":
+                warn("--until ignored when -g is specified")
             if opts.range != DEFAULT_RANGE:
-                warn('--range ignored when -g is specified')
+                warn("--range ignored when -g is specified")
 
-        infov(opts, 'running command: {}'.format(cmd))
+        infov(opts, "running command: {}".format(cmd))
         st, out = runcmd(cmd, show_output=opts.verbose > 1)
         if st:
-            err('Command failed: {}\n{}'.format(cmd, out))
-        infov(opts, 'read {:,} bytes'.format(len(out)))
+            err("Command failed: {}\n{}".format(cmd, out))
+        infov(opts, "read {:,} bytes".format(len(out)))
 
     if opts.keep is True:
         # The user decided to keep the generated output for
         # re-use.
-        ofn = opts.DOT_FILE[0] + '.keep'
-        infov(opts, 'writing command output to {}'.format(ofn))
+        ofn = opts.DOT_FILE[0] + ".keep"
+        infov(opts, "writing command output to {}".format(ofn))
         try:
-            with open(ofn, 'w') as ofp:
+            with open(ofn, "w") as ofp:
                 ofp.write(out)
         except IOError as e:
-            err('unable to write to {}: {}'.format(ofn, e))
+            err("unable to write to {}: {}".format(ofn, e))
 
     return out.splitlines()
 
 
 def prune_by_date(opts):
-    '''
+    """
     Prune by date is --since, --until or --range were specified.
-    '''
-    if opts.since != '' or opts.until != '' or opts.range != '':
-        infov(opts, 'pruning parents')
+    """
+    if opts.since != "" or opts.until != "" or opts.range != "":
+        infov(opts, "pruning parents")
         nump = 0
         numt = 0
         for i, nd in enumerate(Node.m_list):
@@ -323,13 +335,13 @@ def prune_by_date(opts):
             if len(np) < len(nd.m_parents):  # pruned
                 Node.m_list[i].m_parents = np
                 Node.m_map[nd.m_cid].m_parents = np
-        infov(opts, 'pruned {:,} parent node references out of {:,}'.format(nump, numt))
+        infov(opts, "pruned {:,} parent node references out of {:,}".format(nump, numt))
 
 
 def prune_by_choice(opts):
-    '''
+    """
     Prune by --choose-branch and --choose-tag if they were specified.
-    '''
+    """
     if len(opts.choose_branch) > 0 or len(opts.choose_tag) > 0:
         # The algorithm is as follows:
         #     1. for each branch and tag find the associated node.
@@ -349,7 +361,7 @@ def prune_by_choice(opts):
         #        just prior to delete a node, remove it from child list
         #        of its parents and from the parent list of its children.
         #        make sure that all m_idx settings are correctly updated.
-        infov(opts, 'pruning graph based on choices')
+        infov(opts, "pruning graph based on choices")
         bs = {}
         ts = {}
 
@@ -363,7 +375,7 @@ def prune_by_choice(opts):
             Node.m_list[idx].m_choose = False  # step 2
 
             # Step 1.
-            nd =  Node.m_list[idx]
+            nd = Node.m_list[idx]
             for b in opts.choose_branch:
                 if b in nd.m_branches:
                     bs[b].append(idx)
@@ -393,7 +405,7 @@ def prune_by_choice(opts):
                 if idx in parents:
                     continue  # already processed
 
-                nd =  Node.m_list[idx]
+                nd = Node.m_list[idx]
                 Node.m_list[idx].m_choose = True
                 parents[idx] = nd.m_cid
                 for pcid in nd.m_parents:
@@ -411,10 +423,10 @@ def prune_by_choice(opts):
                     get_parents(idx, parents)
 
         pruning = len(Node.m_list) - len(parents)
-        infov(opts, 'keeping {:,}'.format(len(parents)))
-        infov(opts, 'pruning {:,}'.format(pruning))
+        infov(opts, "keeping {:,}".format(len(parents)))
+        infov(opts, "pruning {:,}".format(pruning))
         if pruning == 0:
-            warn('nothing to prune')
+            warn("nothing to prune")
             return
 
         # We now have all of the nodes that we want to keep.
@@ -430,7 +442,7 @@ def prune_by_choice(opts):
                 # Note that the child lists stored nodes.
                 for pcid in nd.m_parents:
                     if pcid in Node.m_map:  # might have been deleted already
-                        pnd =  Node.m_map[pcid]
+                        pnd = Node.m_map[pcid]
                         if pnd.m_choose == True:  # ignore pruned nodes (e.g. False)
                             pnd.rm_child(cid)
 
@@ -442,30 +454,30 @@ def prune_by_choice(opts):
                         cnd.rm_parent(cid)
 
                 # Actual deletion.
-                Node.m_list = Node.m_list[:idx] + Node.m_list[idx+1:]
+                Node.m_list = Node.m_list[:idx] + Node.m_list[idx + 1 :]
                 del Node.m_map[cid]
 
         for i, nd in enumerate(Node.m_list):
             Node.m_list[i].m_idx = i
             Node.m_map[nd.m_cid].m_idx = i
 
-        infov(opts, 'remaining {:,}'.format(len(Node.m_list)))
+        infov(opts, "remaining {:,}".format(len(Node.m_list)))
 
 
 def parse(opts):
-    '''
+    """
     Parse the node data.
-    '''
-    infov(opts, 'loading nodes (commit data)')
+    """
+    infov(opts, "loading nodes (commit data)")
     nd = None
     lines = read(opts)
 
-    infov(opts, 'parsing read data')
+    infov(opts, "parsing read data")
     for line in lines:
         line = line.strip()
-        if line.find(u'|Record:|') >= 0:
-            flds = line.split('|')
-            assert flds[1] == 'Record:'
+        if line.find(u"|Record:|") >= 0:
+            flds = line.split("|")
+            assert flds[1] == "Record:"
             cid = flds[2]  # Commit id.
             pids = flds[3].split()  # parent ids
             tags = []
@@ -474,19 +486,19 @@ def parse(opts):
             try:
                 dts = dateutil.parser.parse(flds[5])
             except:
-                err('unrecognized date format: {}\n\tline: {}'.format(flds[5], line))
+                err("unrecognized date format: {}\n\tline: {}".format(flds[5], line))
             if len(refs):
                 # branches and tags
-                if refs[0] == '(' and refs[-1] == ')':
+                if refs[0] == "(" and refs[-1] == ")":
                     refs = refs[1:-1]
-                for fld in refs.split(','):
+                for fld in refs.split(","):
                     fld = fld.strip()
-                    if 'tag: ' in fld:
+                    if "tag: " in fld:
                         tags.append(fld)
                     else:
                         ref = fld
-                        if ' -> ' in fld:
-                            ref = fld.split(' -> ')[1]
+                        if " -> " in fld:
+                            ref = fld.split(" -> ")[1]
                         branches.append(ref)
             nd = Node(cid, pids, branches, tags, dts)
 
@@ -516,7 +528,7 @@ def parse(opts):
         if opts.cnode_label_recid in line:
             # Add the additional commit node label data into the node.
             th = opts.cnode_label_maxwidth
-            flds = line.split('|')
+            flds = line.split("|")
             idx = nd.m_idx
 
             def setval(idx, th, val):
@@ -526,7 +538,7 @@ def parse(opts):
                 Node.m_list[idx].m_extra.append(val)
 
             # Update the field values.
-            for fld in flds[1:]: # skip the record field
+            for fld in flds[1:]:  # skip the record field
                 # We have the list of fields but these are not, necessarily
                 # the same as the variables.
                 # Example: @CHID@
@@ -550,20 +562,20 @@ def parse(opts):
                                     # This is hard because there may be
                                     # multiple variables that are vectors
                                     # of different sizes, punt for now.
-                                    fld = fld.replace(var, '{}'.format(vals))
+                                    fld = fld.replace(var, "{}".format(vals))
                                     setval(idx, th, fld)
                 if not found:
                     setval(idx, th, fld)
 
     if len(Node.m_list) == 0:
-        err('no records found')
+        err("no records found")
 
     prune_by_date(opts)
     prune_by_choice(opts)
 
     # Update the child list for each node by looking at the parents.
     # This helps us identify merge nodes.
-    infov(opts, 'updating children')
+    infov(opts, "updating children")
     num_edges = 0
     for nd in Node.m_list:
         for p in nd.m_parents:
@@ -571,84 +583,92 @@ def parse(opts):
             Node.m_map[p].m_children.append(nd)
 
     # Summary of initial read.
-    infov(opts, 'found {:,} commit nodes'.format(len(Node.m_list)))
-    infov(opts, 'found {:,} commit edges'.format(num_edges))
+    infov(opts, "found {:,} commit nodes".format(len(Node.m_list)))
+    infov(opts, "found {:,} commit edges".format(num_edges))
     if opts.verbose:
         for var in Node.m_vars_usage:
-            info('found {:,} nodes with values for variable "{}"'.format(len(Node.m_vars_usage[var]), var))
+            info(
+                'found {:,} nodes with values for variable "{}"'.format(
+                    len(Node.m_vars_usage[var]), var
+                )
+            )
 
     # Squash nodes.
     if opts.squash:
-        infov(opts, 'squashing chains')
+        infov(opts, "squashing chains")
         Node.squash()
 
     # Create the bydate list to enable ranking using invisible
     # constraints.
-    infov(opts, 'sorting by date')
+    infov(opts, "sorting by date")
     Node.m_list_bydate = [nd.m_cid for nd in Node.m_list]
     Node.m_list_bydate.sort(key=lambda x: Node.m_map[x].m_dts)
 
 
 def gendot(opts):
-    '''
+    """
     Generate a test graph.
-    '''
+    """
     # Write out the graph stuff.
-    infov(opts, 'gendot')
+    infov(opts, "gendot")
 
     try:
-        ofp = open(opts.DOT_FILE[0], 'w')
+        ofp = open(opts.DOT_FILE[0], "w")
     except IOError as e:
-        err('file open failed: {}'.format(e))
+        err("file open failed: {}".format(e))
 
     # Keep track of the node information so
     # that it can be reported at the end.
-    summary = {'num_graph_commit_nodes': 0,
-               'num_graph_merge_nodes': 0,
-               'num_graph_squash_nodes': 0,
-               'total_graph_commit_nodes': 0,  # sum of commit, merge and squash nodes
-               'total_commits': 0}   # total nodes with no squashing
+    summary = {
+        "num_graph_commit_nodes": 0,
+        "num_graph_merge_nodes": 0,
+        "num_graph_squash_nodes": 0,
+        "total_graph_commit_nodes": 0,  # sum of commit, merge and squash nodes
+        "total_commits": 0,
+    }  # total nodes with no squashing
 
-    ofp.write('digraph G {\n')
+    ofp.write("digraph G {\n")
     for v in opts.dot_option:
-        if len(opts.font_size) and 'fontsize=' in v:
-            v = re.sub(r'(fontsize=)[^,]+,', r'\1"' + opts.font_size + r'",' , v)
-        if len(opts.font_name) and 'fontsize=' in v:
-            v = re.sub(r'(fontsize=[^,]+),', r'\1, fontname="' + opts.font_name + r'",', v)
-        ofp.write('   {}'.format(v))
-        if v[-1] != ';':
-            ofp.write(';')
-        ofp.write('\n')
+        if len(opts.font_size) and "fontsize=" in v:
+            v = re.sub(r"(fontsize=)[^,]+,", r'\1"' + opts.font_size + r'",', v)
+        if len(opts.font_name) and "fontsize=" in v:
+            v = re.sub(
+                r"(fontsize=[^,]+),", r'\1, fontname="' + opts.font_name + r'",', v
+            )
+        ofp.write("   {}".format(v))
+        if v[-1] != ";":
+            ofp.write(";")
+        ofp.write("\n")
 
-    ofp.write('\n')
-    ofp.write('   // label cnode, mnode and snodes\n')
+    ofp.write("\n")
+    ofp.write("   // label cnode, mnode and snodes\n")
     for nd in Node.m_list:
         if opts.squash and nd.is_squashed():
             continue
         if nd.is_merge_node():
-            label = '\\n'.join(nd.m_extra)
+            label = "\\n".join(nd.m_extra)
             attrs = opts.mnode.format(label=label)
             ofp.write('   "{}" {};\n'.format(nd.m_cid, attrs))
-            summary['num_graph_merge_nodes'] += 1
-            summary['total_graph_commit_nodes'] += 1
-            summary['total_commits'] += 1
+            summary["num_graph_merge_nodes"] += 1
+            summary["total_graph_commit_nodes"] += 1
+            summary["total_commits"] += 1
         elif nd.is_squashed_head() or nd.is_squashed_tail():
-            label = '\\n'.join(nd.m_extra)
+            label = "\\n".join(nd.m_extra)
             attrs = opts.snode.format(label=label)
             ofp.write('   "{}" {};\n'.format(nd.m_cid, attrs))
-            summary['num_graph_squash_nodes'] += 1
-            summary['total_graph_commit_nodes'] += 1
+            summary["num_graph_squash_nodes"] += 1
+            summary["total_graph_commit_nodes"] += 1
         else:
-            label = '\\n'.join(nd.m_extra)
+            label = "\\n".join(nd.m_extra)
             attrs = opts.cnode.format(label=label)
             ofp.write('   "{}" {};\n'.format(nd.m_cid, attrs))
-            summary['num_graph_commit_nodes'] += 1
-            summary['total_graph_commit_nodes'] += 1
-            summary['total_commits'] += 1
+            summary["num_graph_commit_nodes"] += 1
+            summary["total_graph_commit_nodes"] += 1
+            summary["total_commits"] += 1
 
-    infov(opts, 'defining edges')
-    ofp.write('\n')
-    ofp.write('   // edges\n')
+    infov(opts, "defining edges")
+    ofp.write("\n")
+    ofp.write("   // edges\n")
     for nd in Node.m_list:
         if nd.is_squashed():
             continue
@@ -659,28 +679,34 @@ def gendot(opts):
             # Special handling for squashed head nodes, create
             # a squash edge between the head and tail.
             attrs = opts.sedge.format(label=nd.m_chain_size)
-            ofp.write('   "{}" -> "{}" {};\n'.format(nd.m_cid, nd.m_chain_tail.m_cid, attrs))
-            summary['total_commits'] += nd.m_chain_size
+            ofp.write(
+                '   "{}" -> "{}" {};\n'.format(nd.m_cid, nd.m_chain_tail.m_cid, attrs)
+            )
+            summary["total_commits"] += nd.m_chain_size
 
         # Create the edges to the parents.
         for pid in nd.m_parents:
             pnd = Node.m_map[pid]
-            attrs = ''
+            attrs = ""
             if nd.is_merge_node():
                 if len(opts.mnode_pedge) > 0:
-                    attrs = opts.mnode_pedge.format(label='{} to {}'.format(nd.m_cid, pid))
+                    attrs = opts.mnode_pedge.format(
+                        label="{} to {}".format(nd.m_cid, pid)
+                    )
                 ofp.write('   "{}" -> "{}" {};\n'.format(pid, nd.m_cid, attrs))
             else:
                 if len(opts.cnode_pedge) > 0:
-                    attrs = opts.cnode_pedge.format(label='{} to {}'.format(nd.m_cid, pid))
+                    attrs = opts.cnode_pedge.format(
+                        label="{} to {}".format(nd.m_cid, pid)
+                    )
                 ofp.write('   "{}" -> "{}" {};\n'.format(pid, nd.m_cid, attrs))
 
     # Annote the tags and branches for each node.
     # Can't use subgraphs because rankdir is not
     # supported.
-    infov(opts, 'annotating branches and tags')
-    ofp.write('\n')
-    ofp.write('   // annotate branches and tags\n')
+    infov(opts, "annotating branches and tags")
+    ofp.write("\n")
+    ofp.write("   // annotate branches and tags\n")
     first = True
     for idx, nd in enumerate(Node.m_list):
         # technically this is redundant because squashed nodes, by
@@ -692,13 +718,13 @@ def gendot(opts):
             if first:
                 first = False
             else:
-                ofp.write('\n')
+                ofp.write("\n")
 
             if len(nd.m_tags) > 0:
                 if opts.crunch:
                     # Create the node name.
-                    tid = 'tid-{:>08}'.format(idx)
-                    label = '\\n'.join(nd.m_tags)
+                    tid = "tid-{:>08}".format(idx)
+                    label = "\\n".join(nd.m_tags)
                     attrs = opts.tnode.format(label=label)
                     ofp.write('   "{}" {};\n'.format(tid, attrs))
                     torank += [tid]
@@ -719,13 +745,13 @@ def gendot(opts):
                     ofp.write(' -> "{}"'.format(nd.m_cid))
 
                 attrs = opts.tedge.format(label=nd.m_cid)
-                ofp.write(' {};\n'.format(attrs))
+                ofp.write(" {};\n".format(attrs))
 
             if len(nd.m_branches) > 0:
                 if opts.crunch:
                     # Create the node name.
-                    bid = 'bid-{:>08}'.format(idx)
-                    label = '\\n'.join(nd.m_branches)
+                    bid = "bid-{:>08}".format(idx)
+                    label = "\\n".join(nd.m_branches)
                     attrs = opts.bnode.format(label=label)
                     ofp.write('   "{}" {};\n'.format(bid, attrs))
                     torank += [bid]
@@ -744,7 +770,7 @@ def gendot(opts):
                         ofp.write(' -> "{}+{}"'.format(nd.m_cid, b))
 
                 attrs = opts.bedge.format(label=nd.m_cid)
-                ofp.write(' {};\n'.format(attrs))
+                ofp.write(" {};\n".format(attrs))
 
             # Make sure that they line up by putting them in the same rank.
             ofp.write('   {{rank=same; "{}"'.format(torank[0]))
@@ -753,16 +779,16 @@ def gendot(opts):
                     ofp.write('; "{}"'.format(cid))
                 else:
                     ofp.write('; "{}+{}"'.format(nd.m_cid, cid))
-            ofp.write('};\n')
+            ofp.write("};\n")
 
     # Align nodes by commit date.
-    if opts.align_by_date != 'none':
-        infov(opts, 'align by {}'.format(opts.align_by_date))
-        ofp.write('\n')
-        ofp.write('   // rank by date using invisible constraints between groups\n')
+    if opts.align_by_date != "none":
+        infov(opts, "align by {}".format(opts.align_by_date))
+        ofp.write("\n")
+        ofp.write("   // rank by date using invisible constraints between groups\n")
         lnd = Node.m_map[Node.m_list_bydate[0]]
 
-        attrs = ['year', 'month', 'day', 'hour', 'minute', 'second']
+        attrs = ["year", "month", "day", "hour", "minute", "second"]
         for cid in Node.m_list_bydate:
             nd = Node.m_map[cid]
             if nd.is_squashed():
@@ -775,8 +801,14 @@ def gendot(opts):
                     # Add an invisible constraint to guarantee that the
                     # later node appears somewhere to the right.
                     if opts.verbose > 1:
-                        info('aligning {} {} to the left of {} {}'.format(lnd.m_cid, lnd.m_dts, nd.m_cid, nd.m_dts))
-                    ofp.write('   "{}" -> "{}" [style=invis];\n'.format(lnd.m_cid, nd.m_cid))
+                        info(
+                            "aligning {} {} to the left of {} {}".format(
+                                lnd.m_cid, lnd.m_dts, nd.m_cid, nd.m_dts
+                            )
+                        )
+                    ofp.write(
+                        '   "{}" -> "{}" [style=invis];\n'.format(lnd.m_cid, nd.m_cid)
+                    )
                 elif v1 > v2:
                     break
                 if attr == opts.align_by_date:
@@ -787,38 +819,39 @@ def gendot(opts):
 
     # Output the graph label.
     if opts.graph_label is not None:
-        infov(opts, 'generate graph label')
-        ofp.write('\n')
-        ofp.write('   // graph label\n')
-        ofp.write('   {}'.format(opts.graph_label))
+        infov(opts, "generate graph label")
+        ofp.write("\n")
+        ofp.write("   // graph label\n")
+        ofp.write("   {}".format(opts.graph_label))
 
-        if opts.graph_label[-1] != ';':
-            ofp.write(';')
-        ofp.write('\n')
+        if opts.graph_label[-1] != ";":
+            ofp.write(";")
+        ofp.write("\n")
 
-    ofp.write('}\n')
+    ofp.write("}\n")
 
     # Output the summary data.
     for k in sorted(summary, key=str.lower):
         v = summary[k]
-        ofp.write('// summary:{} {}\n'.format(k, v))
+        ofp.write("// summary:{} {}\n".format(k, v))
     ofp.close()
 
 
 def html(opts):
-    '''
+    """
     Generate an HTML file that allows pan and zoom.
     It uses https://github.com/ariutta/svg-pan-zoom.
-    '''
+    """
     # TODO: resize the image height on demand
     if opts.html is not None:
-        infov(opts, 'generating HTML to {}'.format(opts.html))
+        infov(opts, "generating HTML to {}".format(opts.html))
         try:
             html = opts.html
-            svg = opts.DOT_FILE[0] + '.svg'
-            js = 'svg-pan-zoom.min.js'
-            with open(html, 'w') as ofp:
-                ofp.write('''<!DOCTYPE html>
+            svg = opts.DOT_FILE[0] + ".svg"
+            js = "svg-pan-zoom.min.js"
+            with open(html, "w") as ofp:
+                ofp.write(
+                    """<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8">
@@ -853,21 +886,28 @@ def html(opts):
     </script>
   </body>
 </html>
-'''.format(svg, js, opts.html_min_height, '    \n'.join([x for x in opts.html_head]), opts.html_title))
+""".format(
+                        svg,
+                        js,
+                        opts.html_min_height,
+                        "    \n".join([x for x in opts.html_head]),
+                        opts.html_title,
+                    )
+                )
         except IOError as e:
-            err('HTML write failed: {}'.format(e))
+            err("HTML write failed: {}".format(e))
 
 
 def gengraph(opts, fmt):
-    '''
+    """
     Generate the graph file using dot with -O option.
-    '''
+    """
     if fmt:
-        infov(opts, 'generating {}'.format(fmt))
-        cmd = 'dot -T{} -O {}'.format(fmt, opts.DOT_FILE[0])
+        infov(opts, "generating {}".format(fmt))
+        cmd = "dot -T{} -O {}".format(fmt, opts.DOT_FILE[0])
         if opts.verbose:
-            cmd += ' -v'
-        infov(opts, 'running command: {}'.format(cmd))
+            cmd += " -v"
+        infov(opts, "running command: {}".format(cmd))
         st, _ = runcmd(cmd, show_output=opts.verbose > 1)
         if st:
             err('command failed with status {}: :"'.format(st, cmd))

@@ -32,25 +32,12 @@ def cli() -> None:
 
 
 def getopts():
-    '''
+    """
     Get the command line options using argparse.
-    '''
-    # Trick to capitalize the built-in headers.
-    # Unfortunately I can't get rid of the ":" reliably.
-    def gettext(s):
-        lookup = {
-            'usage: ': 'USAGE:',
-            'positional arguments': 'POSITIONAL ARGUMENTS',
-            'optional arguments': 'OPTIONAL ARGUMENTS',
-            'show this help message and exit': 'Show this help message and exit.\n ',
-        }
-        return lookup.get(s, s)
-
-    argparse._ = gettext  # to capitalize help headers
+    """
     base = os.path.basename(sys.argv[0])
-    name = os.path.splitext(base)[0]
-    usage = '\n  {0} [OPTIONS] <DOT_FILE>'.format(base)
-    epilog = r'''EXAMPLES:
+    usage = "\n  {0} [OPTIONS] <DOT_FILE>".format(base)
+    epilog = r"""EXAMPLES:
    # Example 1: help
    $ {0} -h
 
@@ -123,17 +110,18 @@ LICENSE:
 
 PROJECT:
    https://github.com/jlinoff/git2dot
- '''.format(base)
+ """.format(
+        base
+    )
     afc = argparse.RawTextHelpFormatter
-    parser = argparse.ArgumentParser(formatter_class=afc,
-                                     usage=usage,
-                                     epilog=epilog)
+    parser = argparse.ArgumentParser(formatter_class=afc, usage=usage, epilog=epilog)
 
-    parser.add_argument('--align-by-date',
-                        action='store',
-                        choices=['year', 'month', 'day', 'hour', 'minute', 'second', 'none'],
-                        default='none',
-                        help='''Rank the commits by commit date.
+    parser.add_argument(
+        "--align-by-date",
+        action="store",
+        choices=["year", "month", "day", "hour", "minute", "second", "none"],
+        default="none",
+        help="""Rank the commits by commit date.
 The options allow you to specify the relative positions of nodes with
 earlier and later commit dates.  When you specify one of the options
 (other than none), the earlier node will always be to the left of the
@@ -156,26 +144,30 @@ Be careful when using this option. The invisible edge can cause
 nodes to not aligh horizontally which can be a bit jarring.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--bedge',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='[arrowhead=normal, color="lightblue", dir=none]',
-                        help='''Define the bedge attributes.
+    parser.add_argument(
+        "--bedge",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default='[arrowhead=normal, color="lightblue", dir=none]',
+        help="""Define the bedge attributes.
 The bedge is any edge that connects to or from a bnode (see --bnode for details).
 
 Unlike edges that connect cnodes, mnodes and snodes, this is a simple
 connection. The parent reference is obvious because of the rank.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--bnode',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='[label="{label}", color="lightblue", style=filled, shape=box, height=0.15]',
-                        help='''Define the bnode attributes.
+    parser.add_argument(
+        "--bnode",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default='[label="{label}", color="lightblue", style=filled, shape=box, height=0.15]',
+        help="""Define the bnode attributes.
 The bnode is a branch entry for a cnode, mnode or snode. It is only
 associated with the node where it was specified as a ref by git.
 
@@ -188,13 +180,15 @@ attribute of a commit node.
 See the documentation for --cnode for more attribute details.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--choose-branch',
-                        action='append',
-                        metavar=('BRANCH'),
-                        default=[],
-                        help='''Choose a branch to include.
+    parser.add_argument(
+        "--choose-branch",
+        action="append",
+        metavar=("BRANCH"),
+        default=[],
+        help="""Choose a branch to include.
 By default all branches are included. When you select this option, you
 limit the output to commit nodes that are in the branch parent chain.
 
@@ -202,13 +196,15 @@ You can use it to select multiple branches to graph which basically
 tells the tool to prune all other branches as endpoints.
 
 This is very useful for comparing commits between related branches.
- ''')
+ """,
+    )
 
-    parser.add_argument('--choose-tag',
-                        action='append',
-                        metavar=('TAG'),
-                        default=[],
-                        help='''Choose a tag to include.
+    parser.add_argument(
+        "--choose-tag",
+        action="append",
+        metavar=("TAG"),
+        default=[],
+        help="""Choose a tag to include.
 By default all tags are included. When you select this option, you
 limit the output to commit nodes that are in the tag parent chain.
 
@@ -219,25 +215,29 @@ This is very useful for comparing commits between related tags.
 
 Make sure that you specify --branch-tag 'tag: TAGNAME' to match
 what appears in git.
- ''')
+ """,
+    )
 
-    parser.add_argument('--cnode-pedge',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='',
-                        help='''Define the commit node parent edge.
+    parser.add_argument(
+        "--cnode-pedge",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default="",
+        help="""Define the commit node parent edge.
 The cnode-pedge is any edge that connects a commit node to its parent.
 
 Empty use the default edge settings.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--cnode',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='[label="{label}", color="bisque"]',
-                        help='''Define the cnode attributes.
+    parser.add_argument(
+        "--cnode",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default='[label="{label}", color="bisque"]',
+        help="""Define the cnode attributes.
 The cnode is a commit node which is a git commit that has a single child.
 
 The variable {label} is generated internally. You have complete
@@ -254,24 +254,32 @@ Or to change the shape and fillcolor:
 The available attributes are described here: http://www.graphviz.org/doc/info/attrs.html.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('-c', '--crunch',
-                        action='store_true',
-                        help='''Crunch branches and tags.
+    parser.add_argument(
+        "-c",
+        "--crunch",
+        action="store_true",
+        help="""Crunch branches and tags.
 Crunch branches into a single node and tags into a single.
 This works around unwieldy placements of the individual
 nodes by dot in large graphs.
- ''')
+ """,
+    )
 
-    x = ['graph[rankdir="LR", fontsize=10.0, bgcolor="white"]',
-         'node[shape=ellipse, fontsize=10.0, style="filled"]',
-         'edge[weight=2, penwidth=1.0, fontsize=10.0, arrowtail="open", dir="back"]']
-    parser.add_argument('-d', '--dot-option',
-                        action='append',
-                        default=x,
-                        metavar=('OPTION'),
-                        help='''Additional dot options.
+    x = [
+        'graph[rankdir="LR", fontsize=10.0, bgcolor="white"]',
+        'node[shape=ellipse, fontsize=10.0, style="filled"]',
+        'edge[weight=2, penwidth=1.0, fontsize=10.0, arrowtail="open", dir="back"]',
+    ]
+    parser.add_argument(
+        "-d",
+        "--dot-option",
+        action="append",
+        default=x,
+        metavar=("OPTION"),
+        help="""Additional dot options.
 For example, to force straight edges add this:
 
    -d 'splines="false"'
@@ -284,13 +292,18 @@ rankdir=LR or the default fontsize to use for all nodes.
 
 Default:
    -d '{}'
- '''.format('\'\n   -d \''.join(x)))
+ """.format(
+            "'\n   -d '".join(x)
+        ),
+    )
 
-    parser.add_argument('-D', '--define-var',
-                        action='append',
-                        nargs=2,
-                        metavar=('KEY', 'RE'),
-                        help='''Define a variable.
+    parser.add_argument(
+        "-D",
+        "--define-var",
+        action="append",
+        nargs=2,
+        metavar=("KEY", "RE"),
+        help="""Define a variable.
 Variables are custom data that can be referenced in the commit node
 label specification.
 
@@ -314,29 +327,38 @@ For example, never use % or | or { or } in variable names. Always
 surround them with a delimiter like @FOO@.  If you simply specify
 @FOO, then this will match @FOO, @FOOBAR and anything else that
 contains @FOO which is probably not what you want.
- '''.replace('%', '%%'))
+ """.replace(
+            "%", "%%"
+        ),
+    )
 
-    parser.add_argument('--font-name',
-                        action='store',
-                        type=str,
-                        default='',
-                        help='''Change the font name of graph, node and edge objects.
+    parser.add_argument(
+        "--font-name",
+        action="store",
+        type=str,
+        default="",
+        help="""Change the font name of graph, node and edge objects.
 Here is an example: --font-name helvetica.
- ''')
+ """,
+    )
 
-    parser.add_argument('--font-size',
-                        action='store',
-                        type=str,
-                        default='',
-                        help='''Change the font size of graph, node and edge objects.
+    parser.add_argument(
+        "--font-size",
+        action="store",
+        type=str,
+        default="",
+        help="""Change the font size of graph, node and edge objects.
 Here is an example: --font-size 14.0.
- ''')
+ """,
+    )
 
-    parser.add_argument('-g', '--gitcmd',
-                        action='store',
-                        type=str,
-                        default=DEFAULT_GITCMD.replace('%', '%%'),
-                        help='''Base command for generating the graph data.
+    parser.add_argument(
+        "-g",
+        "--gitcmd",
+        action="store",
+        type=str,
+        default=DEFAULT_GITCMD.replace("%", "%%"),
+        help="""Base command for generating the graph data.
 If you override this command, make sure that the output syntax is the
 same as the default command.
 
@@ -351,12 +373,16 @@ correct fields for parsing for everything, including cnode labels.
 This option disables the --range, --since and --until options.
 
 Default: %(default)s
- '''.replace('%', '%%'))
+ """.replace(
+            "%", "%%"
+        ),
+    )
 
-    parser.add_argument('--html',
-                        action='store',
-                        metavar=('FILE'),
-                        help='''Generate an HTML file to view the graph.
+    parser.add_argument(
+        "--html",
+        action="store",
+        metavar=("FILE"),
+        help="""Generate an HTML file to view the graph.
 It uses the svg-pan-zoom JS library to enable panning and zooming.
 Please see https://github.com/ariutta/svg-pan-zoom for more details.
 
@@ -369,63 +395,80 @@ To use the HTML file you will have to copy the SVG and JS files to
 their respective locations or edit the HTML file manually.
 
 You will almost certainly want to update the HTML page title.
- ''')
+ """,
+    )
 
     x = ['<script src="svg-pan-zoom.min.js"></script>']
-    parser.add_argument('--html-head',
-                        action='append',
-                        metavar=('HTML'),
-                        default=x,
-                        help='''Insert extra head statements.
+    parser.add_argument(
+        "--html-head",
+        action="append",
+        metavar=("HTML"),
+        default=x,
+        help="""Insert extra head statements.
 Useful for defining script references.
 
 Default:
    '{}'
- '''.format('\'\n   -d \''.join(x)))
+ """.format(
+            "'\n   -d '".join(x)
+        ),
+    )
 
-    parser.add_argument('--html-min-height',
-                        action='store',
-                        default='700px',
-                        metavar=('MIN-HEIGHT'),
-                        help='''Set the minimum height for the graph.
+    parser.add_argument(
+        "--html-min-height",
+        action="store",
+        default="700px",
+        metavar=("MIN-HEIGHT"),
+        help="""Set the minimum height for the graph.
 Long skinny graphs can be a real problem when zooming so setting
 this 700px or greater really helps.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--html-title',
-                        action='store',
-                        default='git2dot',
-                        metavar=('STRING'),
-                        help='''Set the HTML page title.
+    parser.add_argument(
+        "--html-title",
+        action="store",
+        default="git2dot",
+        metavar=("STRING"),
+        help="""Set the HTML page title.
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('-i', '--input',
-                        action='store',
-                        metavar=('FILE'),
-                        default='',
-                        help='''Input data.
+    parser.add_argument(
+        "-i",
+        "--input",
+        action="store",
+        metavar=("FILE"),
+        default="",
+        help="""Input data.
 You can use this to avoid running git commands.
 It is useful for testing.
- ''')
+ """,
+    )
 
-    parser.add_argument('-k', '--keep',
-                        action='store_true',
-                        help='''Keep the git command output for re-use.
+    parser.add_argument(
+        "-k",
+        "--keep",
+        action="store_true",
+        help="""Keep the git command output for re-use.
 This is great for trying out different display options or for
 sharing.
 
 The kept output file name is DOT_FILE.keep.
- ''')
+ """,
+    )
 
-    parser.add_argument('-l', '--cnode-label',
-                        action='store',
-                        metavar=('LABEL_SPEC'),
-                        #default='%h'.replace('%', '%%'),
-                        default='%h',
-                        help='''Define the label used to identify cnodes, mnodes and snodes in the
+    parser.add_argument(
+        "-l",
+        "--cnode-label",
+        action="store",
+        metavar=("LABEL_SPEC"),
+        # default='%h'.replace('%', '%%'),
+        default="%h",
+        help="""Define the label used to identify cnodes, mnodes and snodes in the
 graph.
 
 Lines are separated by "|"'s. The contents of a line can be a git
@@ -444,12 +487,17 @@ useful.
 You can specify the maximum width of a line using -w.
 
 Default: %(default)s
- '''.replace('%', '%%'))
+ """.replace(
+            "%", "%%"
+        ),
+    )
 
-    parser.add_argument('-L', '--graph-label',
-                        action='store',
-                        metavar=('DOT_LABEL'),
-                        help='''Define a graph label.
+    parser.add_argument(
+        "-L",
+        "--graph-label",
+        action="store",
+        metavar=("DOT_LABEL"),
+        help="""Define a graph label.
 This is a convenience option that could be also be speficied as -d
 'graph=[label="..."]'. It is used to define labels for the graph.
 
@@ -460,45 +508,53 @@ to build a label that is actually an HTML-like table.
 
 The result is a left justified, fixed font output with a small border
 that displays the date and directory that the graph was created in.
- ''')
+ """,
+    )
 
-    parser.add_argument('--mnode-pedge',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='',
-                        help='''Define the merge node parent edge.
+    parser.add_argument(
+        "--mnode-pedge",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default="",
+        help="""Define the merge node parent edge.
 The mnode-pedgeis any edge that connects a merge node to its parent.
 
 Empty use the default edge settings.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--mnode',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='[label="{label}", color="lightpink"]',
-                        help='''Define the mnode attributes.
+    parser.add_argument(
+        "--mnode",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default='[label="{label}", color="lightpink"]',
+        help="""Define the mnode attributes.
 The mnode is a commit node which is a commit that has more than one
 child. It can only be created by a git merge operation.
 
 See the documentation for --cnode for more attribute details.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--png',
-                        action='store_true',
-                        help='''Use dot to generate a PNG file.
+    parser.add_argument(
+        "--png",
+        action="store_true",
+        help="""Use dot to generate a PNG file.
 This option is only valid if -o is specified.
 It is the same as running "dot -Tpng -O DOT_FILE".
- ''')
+ """,
+    )
 
-    parser.add_argument('--range',
-                        action='store',
-                        metavar=('GIT-RANGE'),
-                        default=DEFAULT_RANGE,
-                        help='''Only consider git commits that fall within the range.
+    parser.add_argument(
+        "--range",
+        action="store",
+        metavar=("GIT-RANGE"),
+        default=DEFAULT_RANGE,
+        help="""Only consider git commits that fall within the range.
 These are command line arguments used for defining the range.
 By default use all commits in the range.
 
@@ -515,29 +571,36 @@ instead of
 This option is ignored if -g is specified.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('-s', '--squash',
-                        action='store_true',
-                        help='''Squash sequences of simple commits into a single commit.
+    parser.add_argument(
+        "-s",
+        "--squash",
+        action="store_true",
+        help="""Squash sequences of simple commits into a single commit.
 The default is not to squash.
- ''')
+ """,
+    )
 
-    parser.add_argument('--since',
-                        action='store',
-                        metavar=('DATE'),
-                        default='',
-                        help='''Only consider git commits since the specified date.
+    parser.add_argument(
+        "--since",
+        action="store",
+        metavar=("DATE"),
+        default="",
+        help="""Only consider git commits since the specified date.
 This is the same as the --since option to git log.
 The default is since the first commit.
 This option is ignored if -g is specified.
- ''')
+ """,
+    )
 
-    parser.add_argument('--sedge',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='[label="{label}", style=dotted, arrowhead="none", dir="none"]',
-                        help='''Define the sedge attributes.
+    parser.add_argument(
+        "--sedge",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default='[label="{label}", style=dotted, arrowhead="none", dir="none"]',
+        help="""Define the sedge attributes.
 The sedge is any edge that connects the head and tail squashed nodes
 (see --snode for details).
 
@@ -545,47 +608,55 @@ Typically this is a dotted line with a count of the number of nodes
 that were squashed.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--snode',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='[label="{label}", color="tomato"]',
-                        help='''Define the snode attributes.
+    parser.add_argument(
+        "--snode",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default='[label="{label}", color="tomato"]',
+        help="""Define the snode attributes.
 The snode defines the head and tail nodes of a squashed node sequence.
 
 See the documentation for --cnode for more attribute details.
 
 See the documentation for -s for squash details.
- ''')
+ """,
+    )
 
-    parser.add_argument('--svg',
-                        action='store_true',
-                        help='''Use dot to generate a SVG file.
+    parser.add_argument(
+        "--svg",
+        action="store_true",
+        help="""Use dot to generate a SVG file.
 This option is only valid if -o is specified.
 It is the same as running "dot -Tsvg -O DOT_FILE".
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--tedge',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='[arrowhead=normal, color="thistle", dir=none]',
-                        help='''Define the tedge attributes.
+    parser.add_argument(
+        "--tedge",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default='[arrowhead=normal, color="thistle", dir=none]',
+        help="""Define the tedge attributes.
 The tedge is any edge that connects to or from a tnode (see --tnode for details).
 
 Unlike edges that connect cnodes, mnodes and snodes, this is a simple
 connection. The parent reference is obvious because of the rank.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--tnode',
-                        action='store',
-                        metavar=('DOT_ATTR_LIST'),
-                        default='[label="{label}", color="thistle", style=filled, shape=box, height=0.15]',
-                        help='''Define the tnode attributes.
+    parser.add_argument(
+        "--tnode",
+        action="store",
+        metavar=("DOT_ATTR_LIST"),
+        default='[label="{label}", color="thistle", style=filled, shape=box, height=0.15]',
+        help="""Define the tnode attributes.
 The tnode is a tag entry for a cnode, mnode or snode. It is only
 associated with the node where it was specified as a ref by git.
 
@@ -598,94 +669,105 @@ attribute of a commit node.
 See the documentation for --cnode for more attribute details.
 
 Default: %(default)s
- ''')
+ """,
+    )
 
-    parser.add_argument('--until',
-                        action='store',
-                        metavar=('DATE'),
-                        default='',
-                        help='''Only consider git commits until the specified date.
+    parser.add_argument(
+        "--until",
+        action="store",
+        metavar=("DATE"),
+        default="",
+        help="""Only consider git commits until the specified date.
 This is the same as the --until option to git log.
 The default is until the last commit.
 This option is ignored if -g is specified.
- ''')
+ """,
+    )
 
-    parser.add_argument('-v', '--verbose',
-                        action='count',
-                        default=0,
-                        help='''Increase the level of verbosity.
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="""Increase the level of verbosity.
 -v    shows the basic steps
 -v -v shows a lot of output for debugging
- ''')
+ """,
+    )
 
-    parser.add_argument('-w', '--cnode-label-maxwidth',
-                        action='store',
-                        type=int,
-                        metavar=('WIDTH'),
-                        default=32,
-                        help='''Maximum width of a line for a cnode label.
+    parser.add_argument(
+        "-w",
+        "--cnode-label-maxwidth",
+        action="store",
+        type=int,
+        metavar=("WIDTH"),
+        default=32,
+        help="""Maximum width of a line for a cnode label.
 See -l for more details.
- ''')
+ """,
+    )
 
-    parser.add_argument('-x', '--cnode-label-recid',
-                        action='store',
-                        metavar=('STRING'),
-                        default='@@@git2dot-label@@@:',
-                        help='''Record identifier for cnode-label fields.
+    parser.add_argument(
+        "-x",
+        "--cnode-label-recid",
+        action="store",
+        metavar=("STRING"),
+        default="@@@git2dot-label@@@:",
+        help="""Record identifier for cnode-label fields.
 When -l is specified, an extra set of format data is appended to the
 gitcmd (-g). This data must be uniquely identified so this option is
 used to define the record. It must not appear as random text in a git
 comment so it must be odd.
 
 Default: %(default)s
-''')
+""",
+    )
 
     # Positional arguments at the end.
-    parser.add_argument('DOT_FILE',
-                        nargs=1,
-                        help='''Graphviz dot file name.
+    parser.add_argument(
+        "DOT_FILE",
+        nargs=1,
+        help="""Graphviz dot file name.
 If the .dot extension is not specified, it is appended
 automatically.
-''')
+""",
+    )
 
     opts = parser.parse_args()
     return opts
 
 
 def cmdline(opts):
-    '''
+    """
     Re-generate the command line as a string.
-    '''
+    """
     if opts.verbose:
         cli = []
-        qs = [' ', '\t', '|', '?', '$', '#']  # tokens that will trigger a quote
+        qs = [" ", "\t", "|", "?", "$", "#"]  # tokens that will trigger a quote
         for arg in sys.argv:
-            arg = arg.replace('\\', '\\\\').replace('"', '\\"')
+            arg = arg.replace("\\", "\\\\").replace('"', '\\"')
             q = False
             for q in qs:
                 if q in arg:
                     arg = '"' + arg + '"'
                     break
             cli.append(arg)
-        cmd = ' '.join(cli)
-        infov(opts, 'cmdline = {}'.format(cmd))
+        cmd = " ".join(cli)
+        infov(opts, "cmdline = {}".format(cmd))
 
 
 def main():
-    '''
-    main
-    '''
     opts = getopts()
     cmdline(opts)
     parse(opts)
     gendot(opts)
     html(opts)
     if opts.png:
-        gengraph(opts, 'png')
+        gengraph(opts, "png")
     if opts.svg:
-        gengraph(opts, 'svg')
-    infov(opts, 'done')
+        gengraph(opts, "svg")
+    infov(opts, "done")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

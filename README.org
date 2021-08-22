@@ -1,3 +1,6 @@
+This is just me experimenting with an awesome project I just found:
+https://github.com/jlinoff/git2dot
+
 * TODO
 
   - [ ] GitHub Action that runs tests
