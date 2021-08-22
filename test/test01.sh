@@ -15,18 +15,18 @@ source $Location/test-utils.sh
 if (( Keep )) ; then
     Input=""
     runcmd git init
-    
+
     echo 'A' >$Name.txt
     runcmd git add $Name.txt
     runcmd git commit -m "'master - first'"
-    
+
     echo 'B' >>$Name.txt
     runcmd git add $Name.txt
     runcmd git commit -m "'master - second'"
-    
+
     # tag the basis for all of the branches
     runcmd git tag -a 'v0.1' -m "'Initial version.'"
-    
+
     runcmd git checkout master
     runcmd echo 'L' '>>' $Name.txt
     runcmd git add $Name.txt
@@ -38,7 +38,7 @@ fi
 # ================================================================
 echo ""
 Purpose="3 commits on master, 1 tag"
-runcmd ../git2dot.py \
+runcmd git2dot \
        $KeepOpt \
        -v \
        -v \
@@ -53,4 +53,3 @@ runcmd ../git2dot.py \
 
 Finish
 info 'done'
-

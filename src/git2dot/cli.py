@@ -9,29 +9,7 @@ DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"' # --gitcmd
 DEFAULT_RANGE = '--all --topo-order'  # --range
 
 
-def cli() -> None:
-    """Parse command line arguments and call ``main``.
-
-    This is the interactive (CLI) entry-point to the program.
-    """
-    # parser = argparse.ArgumentParser(description=__summary__)
-
-    # parser.add_argument(
-    #     "--version", default=False, action="store_true", help="Print version"
-    # )
-
-    # args = parser.parse_args()
-
-    # if args.version:
-    #     print(__version__)
-    #     sys.exit(0)
-
-    # opts = vars(args)
-    # main(opts)
-    main()
-
-
-def getopts():
+def arg_parser() -> argparse.ArgumentParser:
     """
     Get the command line options using argparse.
     """
@@ -115,6 +93,10 @@ PROJECT:
     )
     afc = argparse.RawTextHelpFormatter
     parser = argparse.ArgumentParser(formatter_class=afc, usage=usage, epilog=epilog)
+
+    parser.add_argument(
+        "--version", default=False, action="version", version=__version__
+    )
 
     parser.add_argument(
         "--align-by-date",
@@ -733,8 +715,7 @@ automatically.
 """,
     )
 
-    opts = parser.parse_args()
-    return opts
+    return parser
 
 
 def cmdline(opts):
@@ -756,8 +737,22 @@ def cmdline(opts):
         infov(opts, "cmdline = {}".format(cmd))
 
 
-def main():
-    opts = getopts()
+def cli() -> None:
+    """Parse command line arguments and call ``main``.
+
+    This is the interactive (CLI) entry-point to the program.
+    """
+    parser = arg_parser()
+    args = parser.parse_args()
+
+    # opts = vars(args)
+    # main(opts)
+    main(args)
+
+
+def main(opts: argparse.Namespace):
+    print("THIS IS MAIN")
+    print(opts)
     cmdline(opts)
     parse(opts)
     gendot(opts)
