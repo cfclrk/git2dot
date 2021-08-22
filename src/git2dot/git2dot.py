@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-r'''
+'''
 Tool to visualize a git repository using the graphviz dot tool.
 
 It is useful for understanding how git works in detail.  You can use
@@ -1618,13 +1617,6 @@ def main():
     '''
     main
     '''
-    try:
-        # Make everything unicode in python 2.7.
-        reload(sys)
-        sys.setdefaultencoding('utf8')
-    except NameError:
-        pass
-
     opts = getopts()
     cmdline(opts)
     parse(opts)

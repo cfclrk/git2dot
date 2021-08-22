@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: git2dot
+Version: 0.8.3
+Summary: Visualize a git repository using graphviz dot.
+Home-page: https://github.com/jlinoff/git2dot
+License: UNKNOWN
+Project-URL: Source, https://github.com/jlinoff/git2dot
+Project-URL: Tracker, https://github.com/jlinoff/git2dot/issues
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Provides-Extra: dev

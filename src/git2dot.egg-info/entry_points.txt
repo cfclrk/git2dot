@@ -1,0 +1,3 @@
+[console_scripts]
+git2dot = git2dot.git2dot:main
+

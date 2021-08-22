@@ -1,3 +1,4 @@
+.python-version
 *~
 # Ignore generated files.
 example/example*.dot*
@@ -11,4 +12,3 @@ test/test*.html
 test/test*.difflog
 test/test*.log
 test/test*.filter
-
