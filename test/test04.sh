@@ -103,11 +103,9 @@ runcmd git2dot \
        -L "'graph[label=<<table border=\"0\"><tr><td border=\"1\" align=\"left\" balign=\"left\" bgcolor=\"lightyellow\"><font face=\"courier\" point-size=\"9\">Test:    $Name<br/>Purpose: $Purpose<br/>Dir:     $(pwd)<br/>Date:    $(date)</font></td></tr></table>>]'" \
        --png \
        --svg \
-       --html $Name.html \
-       --html-head "'<script src="svg-pan-zoom.min.js"></script>'" \
        --dot-option "'splines=\"true\"'" \
        -s \
-       $Name.dot
+       -o $Name.dot
 
 Finish
 info 'done'

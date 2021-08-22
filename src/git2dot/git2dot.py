@@ -1,4 +1,3 @@
-import argparse
 import dateutil.parser
 import inspect
 import re
@@ -304,7 +303,7 @@ def read(opts):
     if opts.keep is True:
         # The user decided to keep the generated output for
         # re-use.
-        ofn = opts.DOT_FILE[0] + ".keep"
+        ofn = opts.outfile + ".keep"
         infov(opts, "writing command output to {}".format(ofn))
         try:
             with open(ofn, "w") as ofp:
@@ -611,10 +610,10 @@ def gendot(opts):
     # Write out the graph stuff.
     infov(opts, "gendot")
 
-    try:
-        ofp = open(opts.DOT_FILE[0], "w")
-    except IOError as e:
-        err("file open failed: {}".format(e))
+    if opts.outfile:
+        ofp = open(opts.outfile, "w")
+    else:
+        ofp = sys.stdout
 
     # Keep track of the node information so
     # that it can be reported at the end.
@@ -836,74 +835,13 @@ def gendot(opts):
     ofp.close()
 
 
-def html(opts):
-    """
-    Generate an HTML file that allows pan and zoom.
-    It uses https://github.com/ariutta/svg-pan-zoom.
-    """
-    # TODO: resize the image height on demand
-    if opts.html is not None:
-        infov(opts, "generating HTML to {}".format(opts.html))
-        try:
-            html = opts.html
-            svg = opts.DOT_FILE[0] + ".svg"
-            js = "svg-pan-zoom.min.js"
-            with open(html, "w") as ofp:
-                ofp.write(
-                    """<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>{4}</title>
-    {3}
-  </head>
-  <body>
-    <h3>{4}</h3>
-    <div style="border-width:3px; border-style:solid; border-color:lightgrey;">
-      <object id="digraph" type="image/svg+xml" data="{0}" style="width:100%; min-height:{2};">
-        SVG not supported by this browser.
-      </object>
-    </div>
-    <script>
-      window.onload = function() {{
-        svgPanZoom('#digraph', {{
-          zoomEnabled: true,
-          controlIconsEnabled: true,
-          fit: true,
-          center: true,
-          maxZoom: 1000,
-          zoomScaleSensitivity: 0.5
-        }});
-      }};
-      window.addEventListener("resize", function() {{
-        if (spz != null) {{
-          spz.resize();
-          spz.fit();
-          spz.center();
-        }}
-      }});
-    </script>
-  </body>
-</html>
-""".format(
-                        svg,
-                        js,
-                        opts.html_min_height,
-                        "    \n".join([x for x in opts.html_head]),
-                        opts.html_title,
-                    )
-                )
-        except IOError as e:
-            err("HTML write failed: {}".format(e))
-
-
 def gengraph(opts, fmt):
     """
     Generate the graph file using dot with -O option.
     """
     if fmt:
         infov(opts, "generating {}".format(fmt))
-        cmd = "dot -T{} -O {}".format(fmt, opts.DOT_FILE[0])
+        cmd = "dot -T{} -O {}".format(fmt, opts.outfile)
         if opts.verbose:
             cmd += " -v"
         infov(opts, "running command: {}".format(cmd))

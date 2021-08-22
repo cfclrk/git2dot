@@ -3,10 +3,10 @@ import sys
 import os
 
 from git2dot import __summary__, __version__
-from git2dot.git2dot import parse, gendot, html, gengraph, infov
+from git2dot.git2dot import parse, gendot, gengraph, infov
 
-DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"' # --gitcmd
-DEFAULT_RANGE = '--all --topo-order'  # --range
+DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"'  # --gitcmd
+DEFAULT_RANGE = "--all --topo-order"  # --range
 
 
 def arg_parser() -> argparse.ArgumentParser:
@@ -14,7 +14,6 @@ def arg_parser() -> argparse.ArgumentParser:
     Get the command line options using argparse.
     """
     base = os.path.basename(sys.argv[0])
-    usage = "\n  {0} [OPTIONS] <DOT_FILE>".format(base)
     epilog = r"""EXAMPLES:
    # Example 1: help
    $ {0} -h
@@ -92,7 +91,7 @@ PROJECT:
         base
     )
     afc = argparse.RawTextHelpFormatter
-    parser = argparse.ArgumentParser(formatter_class=afc, usage=usage, epilog=epilog)
+    parser = argparse.ArgumentParser(formatter_class=afc, epilog=epilog)
 
     parser.add_argument(
         "--version", default=False, action="version", version=__version__
@@ -361,65 +360,6 @@ Default: %(default)s
     )
 
     parser.add_argument(
-        "--html",
-        action="store",
-        metavar=("FILE"),
-        help="""Generate an HTML file to view the graph.
-It uses the svg-pan-zoom JS library to enable panning and zooming.
-Please see https://github.com/ariutta/svg-pan-zoom for more details.
-
-The name of the SVG file is DOT_FILE.svg.
-
-The image file reference in the HTML is DOT_FILE.svg.
-The svg-pan-zoom script is referenced as svg-pan-zoom.min.js in the HTML.
-
-To use the HTML file you will have to copy the SVG and JS files to
-their respective locations or edit the HTML file manually.
-
-You will almost certainly want to update the HTML page title.
- """,
-    )
-
-    x = ['<script src="svg-pan-zoom.min.js"></script>']
-    parser.add_argument(
-        "--html-head",
-        action="append",
-        metavar=("HTML"),
-        default=x,
-        help="""Insert extra head statements.
-Useful for defining script references.
-
-Default:
-   '{}'
- """.format(
-            "'\n   -d '".join(x)
-        ),
-    )
-
-    parser.add_argument(
-        "--html-min-height",
-        action="store",
-        default="700px",
-        metavar=("MIN-HEIGHT"),
-        help="""Set the minimum height for the graph.
-Long skinny graphs can be a real problem when zooming so setting
-this 700px or greater really helps.
-
-Default: %(default)s
- """,
-    )
-
-    parser.add_argument(
-        "--html-title",
-        action="store",
-        default="git2dot",
-        metavar=("STRING"),
-        help="""Set the HTML page title.
-Default: %(default)s
- """,
-    )
-
-    parser.add_argument(
         "-i",
         "--input",
         action="store",
@@ -526,8 +466,7 @@ Default: %(default)s
         "--png",
         action="store_true",
         help="""Use dot to generate a PNG file.
-This option is only valid if -o is specified.
-It is the same as running "dot -Tpng -O DOT_FILE".
+This is the same as running "dot -Tpng -O FILE.dot".
  """,
     )
 
@@ -611,10 +550,7 @@ See the documentation for -s for squash details.
         "--svg",
         action="store_true",
         help="""Use dot to generate a SVG file.
-This option is only valid if -o is specified.
-It is the same as running "dot -Tsvg -O DOT_FILE".
-
-Default: %(default)s
+This is the same as running "dot -Tsvg -O FILE.dot".
  """,
     )
 
@@ -707,12 +643,10 @@ Default: %(default)s
 
     # Positional arguments at the end.
     parser.add_argument(
-        "DOT_FILE",
-        nargs=1,
-        help="""Graphviz dot file name.
-If the .dot extension is not specified, it is appended
-automatically.
-""",
+        "-o",
+        "--outfile",
+        type=str,
+        help="Write output to a file."
     )
 
     return parser
@@ -738,31 +672,32 @@ def cmdline(opts):
 
 
 def cli() -> None:
-    """Parse command line arguments and call ``main``.
+    """Parse command line arguments and call main.
 
     This is the interactive (CLI) entry-point to the program.
     """
     parser = arg_parser()
     args = parser.parse_args()
-
-    # opts = vars(args)
-    # main(opts)
     main(args)
 
 
 def main(opts: argparse.Namespace):
-    print("THIS IS MAIN")
-    print(opts)
     cmdline(opts)
     parse(opts)
+
+    # TODO: this should return a string
     gendot(opts)
-    html(opts)
+
+    # TODO: pass string to these functions
     if opts.png:
         gengraph(opts, "png")
     if opts.svg:
         gengraph(opts, "svg")
+
+    # TODO: if outfile is specified, write to that file
+
     infov(opts, "done")
 
 
 if __name__ == "__main__":
-    main()
+    cli()

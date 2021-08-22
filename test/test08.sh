@@ -104,12 +104,11 @@ runcmd git2dot \
        -D '@CHID@' "'Change-Id: I([a-z0-9]+)'" \
        -l "'%s|%ci|@CHID@'" \
        -L "'graph[label=<<table border=\"0\"><tr><td border=\"1\" align=\"left\" balign=\"left\" bgcolor=\"lightyellow\"><font face=\"courier\" point-size=\"9\">Test:    $Name<br/>Purpose: $Purpose<br/>Dir:     $(pwd)<br/>Date:    $(date)</font></td></tr></table>>]'" \
-       --html $Name.html \
        --dot-option "'splines=\"true\"'" \
        -s \
        --png \
        --svg \
-       $Name.dot
+       -o $Name.dot
 
 Finish
 info 'done'
