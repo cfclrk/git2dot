@@ -1,7 +1,0 @@
-python-dateutil
-
-[dev]
-black
-flake8
-isort
-mypy

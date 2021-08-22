@@ -1,8 +1,0 @@
-setup.cfg
-setup.py
-src/git2dot.egg-info/PKG-INFO
-src/git2dot.egg-info/SOURCES.txt
-src/git2dot.egg-info/dependency_links.txt
-src/git2dot.egg-info/entry_points.txt
-src/git2dot.egg-info/requires.txt
-src/git2dot.egg-info/top_level.txt

@@ -1,95 +1,4 @@
-'''
-Tool to visualize a git repository using the graphviz dot tool.
-
-It is useful for understanding how git works in detail.  You can use
-it to analyze repositories before and after operations like merge and
-rebase to really get a feeling for what happens. It can also be used
-for looking at subsets of history on live repositories.
-
-It works by running over the .git repository in the current directory
-and generating a commit relationship DAG that has both parent and
-child relationships.
-
-The generated graph shows commits, tags and branches as nodes.
-Commits are further broken down into simple commits and merged commits
-where merged commits are commits with 2 or more children. There is an
-additional option that allows you to squash long chains of simple
-commits with no branch or tag data.
-
-It has a number of different options for customizing the nodes,
-using your own custom git command to generate the data, keeping
-the generated data for re-use and generating graphical output like
-PNG, SVG or even HTML files.
-
-Here is an example run:
-
-   $ cd SANDBOX
-   $ git2dot.py --png git.dot
-   $ open -a Preview git.dot.png  # on Mac OS X
-   $ display git.dot.png          # linux
-
-If you want to create a simple HTML page that allows panning and
-zooming of the generated SVG then use the --html option like
-this.
-
-   $ cd SANDBOX
-   $ git2dot.py --svg --html ~/web/index.html ~/web/git.dot
-   $ $ ls ~/web
-   git.dot          git.dot.svg      git.html         svg-pan-zoom.min.js
-   $ cd ~/web
-   $ python -m SimpleHTTPServer 8090  # start server
-   $ # Browse to http://localhost:8090/git.dot.svg
-
-It assumes that existence of svg-pan-zoom.min.js from the
-https://github.com/ariutta/svg-pan-zoom package.
-
-The output is pretty customizable. For example, to add the subject and
-commit date to the commit node names use -l '%s|%cr'. The items come
-from the git format placeholders or variables that you define using
--D. The | separator is used to define the end of a line. The maximum
-width of each line can be specified by -w. Variables are defined by -D
-and come from text in the commit message. See -D for more details.
-
-You can customize the attributes of the different types of nodes and
-edges in the graph using the -?node and -?edge attributes. The table
-below briefly describes the different node types:
-
-   bedge     Edge connecting to a bnode.
-   bnode     Branch node associated with a commit.
-   cnode     Commit node (simple commit node).
-   mnode     Merge node. A commit node with multiple children.
-   snode     Squashed node. End point of a sequence of squashed nodes.
-   tedge     Edge connecting to a tnode.
-   tnode     Tag node associated with a commit.
-
-If you have long chains of single commits use the --squash option to
-squash out the middle ones. That is generally helpful for filtering
-out extraneous commit details for moderately sized repos.
-
-If you find that dot is placing your bnode and tnode nodes in odd
-places, use the --crunch option to collapse the bnode nodes into
-a single node and the tnodes into a single node for each commit.
-
-If you want to limit the analysis to commits between certain dates,
-use the --since and --until options.
-
-If you want to limit the analysis to commits in a certain range use
-the --range option.
-
-If you want to limit the analysis to a small set of branches or tags
-you can use the --choose-branch and --choose-tag options. These options
-prune the graph so that only parents of commits with the choose branch
-or tag ids are included in the graph. This gives you more detail
-controlled that the git options allowed in the --range command. It
-is very useful for determining where branches occurred.
-
-You can choose to keep the git output to re-use multiple times with
-different display options or to share by specifying the -k (--keep)
-option.
-'''
 import argparse
-import copy
-import datetime
 import dateutil.parser
 import inspect
 import os
@@ -98,13 +7,12 @@ import subprocess
 import sys
 
 
-VERSION = '0.8.3'
 DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"' # --gitcmd
 DEFAULT_RANGE = '--all --topo-order'  # --range
 
 
 class Node:
-    r'''
+    '''
     Each node represents a commit.
     A commit can have zero or parents.
     A parent link is created each time a merge is done.
@@ -984,7 +892,6 @@ def getopts():
     base = os.path.basename(sys.argv[0])
     name = os.path.splitext(base)[0]
     usage = '\n  {0} [OPTIONS] <DOT_FILE>'.format(base)
-    desc = 'DESCRIPTION:{0}'.format('\n  '.join(__doc__.split('\n')))
     epilog = r'''EXAMPLES:
    # Example 1: help
    $ {0} -h
@@ -1061,7 +968,6 @@ PROJECT:
  '''.format(base)
     afc = argparse.RawTextHelpFormatter
     parser = argparse.ArgumentParser(formatter_class=afc,
-                                     description=desc[:-2],
                                      usage=usage,
                                      epilog=epilog)
 
@@ -1554,12 +1460,6 @@ This option is ignored if -g is specified.
 -v -v shows a lot of output for debugging
  ''')
 
-    parser.add_argument('-V', '--version',
-                        action='version',
-                        version='%(prog)s version {0}'.format(VERSION),
-                        help="""Show program's version number and exit.
- """)
-
     parser.add_argument('-w', '--cnode-label-maxwidth',
                         action='store',
                         type=int,
@@ -1611,23 +1511,3 @@ def cmdline(opts):
             cli.append(arg)
         cmd = ' '.join(cli)
         infov(opts, 'cmdline = {}'.format(cmd))
-
-
-def main():
-    '''
-    main
-    '''
-    opts = getopts()
-    cmdline(opts)
-    parse(opts)
-    gendot(opts)
-    html(opts)
-    if opts.png:
-        gengraph(opts, 'png')
-    if opts.svg:
-        gengraph(opts, 'svg')
-    infov(opts, 'done')
-
-
-if __name__ == '__main__':
-    main()
