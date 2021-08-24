@@ -13,39 +13,45 @@ src="https://cloud.githubusercontent.com/assets/2991242/22413672/a3357722-e66e-1
 
   - [ ] Make --png and --svg write a single image to stdout
     - [ ] Update gendot to return a string
+  - [ ] Update --range to be --git-extra-opts or --git-log-extra-opts
   - [ ] GitHub Action that runs tests
+  - [ ] Single squash node
   - [ ] Ability to create graphs with simple labels like A, B, C, D (instead of
     git commit SHAs)
     - Probably a =--msg= flag, which puts the commit message in the node instead
       of the git hash.
 
-* Colors
+* Nodes
 
-  1. Bisque (tan) nodes are commits. Each commit has the short id, the commit
-     date, the subject (truncated to 32 characters) and the change-id (if it
-     exists). The fields are the same for merged and squashed nodes as well.
-  2. Light red nodes are merged nodes. They are commits that resulted from a
-     merge (they have 2 or more children).
-  3. Dark red nodes are squashed nodes. They are the end-points of squashed
-     commit chains. Squashed commit chains do not have any branches, tags,
-     change-ids or merges. They are just a long chain of work. If you turn off
-     squashing, you will see 6 additional commit nodes and the two read squashed
-     nodes will disappear.
-  4. Bluish boxes underneath commit and merge nodes are the branches associated
-     with the commit. There is one box for each branch.
-  5. Light purple boxes above the commit and merge nodes are the tags associated
-     with the commit. There is one box for each tag.
+  Kinds of nodes:
 
-  The generated graph shows commits, tags and branches as nodes. Commits are
-  further broken down into simple commits and merged commits where merged
-  commits are commits with 2 or more children. There is an additional option
-  that allows you to squash long chains of simple commits with no branch or tag
-  data.
+  - *Commit Node* - A git commit.
+    - Abbrev: =cnode=
+    - Default color: bisque (tan)
+  - *Branch Node* - A git branch.
+    - Abbrev: =bnode=
+    - Default color: light blue.
+  - *Merge Node* - Merge commits (commits that have 2 or more children).
+    - Abbrev: =mnode=
+    - Default color: light red.
+  - *Squash Node* - The end-points of a squashed commit chain. Squashed commit
+    chains do not have any branches, tags, change-ids or merges. They are just a
+    long chain of work.
+    - Abrev: =snode=
+    - Default color: dark red
+  - *Tag Node* - A git tag.
+    - Abbrev: =tnode=
+    - Default color: light purple
 
-  It has a number of different options for customizing the nodes, using your own
-  custom git command to generate the data, keeping the generated data for
-  re-use, customizing dot directly and generating graphical output like PNG, SVG
-  or even HTML files.
+  Commit, merge, and squash nodes show the short id, commit date, the subject
+  (truncated to 32 characters) and the change-id (if it exists).
+
+* Edges
+
+  - Parent Edge
+    - Abbrev: =pedge=
+  - Squash Edge - An edge between squash nodes.
+    - Abbrev: =sedge=
 
 * Examples
 
