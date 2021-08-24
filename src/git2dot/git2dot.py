@@ -808,6 +808,7 @@ def gendot(opts):
     ofp.close()
 
 
+# TODO: accept dot source as a param
 def gengraph(opts, fmt):
     """
     Generate the graph file using dot with -O option.
