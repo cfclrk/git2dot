@@ -11,7 +11,7 @@ src="https://cloud.githubusercontent.com/assets/2991242/22413672/a3357722-e66e-1
 
 * TODO
 
-  - [ ] Run tests
+  - [ ] Option to make --png and --svg write to stdout
   - [ ] GitHub Action that runs tests
   - [ ] Ability to create graphs with simple labels like A, B, C, D (instead of
     git commit SHAs)

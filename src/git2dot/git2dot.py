@@ -1,12 +1,13 @@
-import dateutil.parser
 import inspect
 import re
 import subprocess
 import sys
+from typing import Tuple
 
+import dateutil.parser
 
-DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"' # --gitcmd
-DEFAULT_RANGE = '--all --topo-order'  # --range
+DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"'  # --gitcmd
+DEFAULT_RANGE = "--all --topo-order"  # --range
 
 
 class Node:
@@ -185,64 +186,31 @@ def err(msg, lev=1):
     sys.exit(1)
 
 
-def runcmd_long(cmd, show_output=True):
-    """
-    Execute a long running shell command with no inputs.
-    Capture output and exit status.
-    For long running commands, this implementation displays output
-    information as it is captured.
-    For fast running commands it would be better to use
-    subprocess.check_output.
-    """
-    proc = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-    )
+def runcmd(cmd: str, show_output=True) -> Tuple[int, str]:
+    """Execute cmd as a subprocess.
 
-    # Read the output 1 character at a time so that it can be
-    # displayed in real time.
-    output = ""
-    while not proc.returncode:
-        char = proc.stdout.read(1)
-        if not char:
-            # all done, wait for returncode to get populated
-            break
-        else:
-            try:
-                # There is probably a better way to do this.
-                char = char.decode("utf-8")
-            except UnicodeDecodeError:
-                continue
-            output += char
-            if show_output:
-                sys.stdout.write(char)
-                sys.stdout.flush()
-    proc.wait()
-    return proc.returncode, output
-
-
-def runcmd_short(cmd, show_output=True):
-    """
-    Execute a short running shell command with no inputs.
-    Capture output and exit status.
+    Return the stdout and exit status.
     """
     try:
-        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
-        status = 0
-    except subprocess.CalledProcessError as obj:
-        output = obj.output
-        status = obj.returncode
+        proc = subprocess.run(
+            cmd,
+            shell=True,
+            universal_newlines=True,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as ex:
+        print("Error running command: {}".format(ex.cmd))
+        print("Return Code: {}".format(ex.returncode))
+        print("  [stdout]: {}".format(ex.stdout))
+        print("  [stderr]: {}".format(ex.stderr))
+        raise
 
     if show_output:
-        sys.stdout.write(output)
+        print(proc.stdout)
 
-    return status, output
-
-
-def runcmd(cmd, show_output=True):
-    """
-    Wrapper for run commands.
-    """
-    return runcmd_long(cmd, show_output)
+    return proc.returncode, proc.stdout
 
 
 def read(opts):
@@ -429,7 +397,6 @@ def prune_by_choice(opts):
 
         # We now have all of the nodes that we want to keep.
         # We need to delete the others.
-        todel = []
         for nd in Node.m_list[::-1]:
             if nd.m_choose == False:
                 cid = nd.m_cid
@@ -684,7 +651,6 @@ def gendot(opts):
 
         # Create the edges to the parents.
         for pid in nd.m_parents:
-            pnd = Node.m_map[pid]
             attrs = ""
             if nd.is_merge_node():
                 if len(opts.mnode_pedge) > 0:
