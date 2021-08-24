@@ -2,9 +2,11 @@ import inspect
 import re
 import subprocess
 import sys
+from textwrap import dedent
 from typing import Tuple
 
 import dateutil.parser
+import graphviz
 
 DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"'  # --gitcmd
 DEFAULT_RANGE = "--all --topo-order"  # --range
@@ -201,10 +203,15 @@ def runcmd(cmd: str, show_output=True) -> Tuple[int, str]:
             stderr=subprocess.PIPE,
         )
     except subprocess.CalledProcessError as ex:
-        print("Error running command: {}".format(ex.cmd))
-        print("Return Code: {}".format(ex.returncode))
-        print("  [stdout]: {}".format(ex.stdout))
-        print("  [stderr]: {}".format(ex.stderr))
+        msg = dedent(
+            f"""
+            Error running command: {ex.args}
+            Return Code: {ex.returncode}
+              [stdout]: {ex.stdout}
+              [stderr]: {ex.stderr}
+            """
+        )
+        print(msg)
         raise
 
     if show_output:
@@ -440,7 +447,7 @@ def parse(opts):
     infov(opts, "parsing read data")
     for line in lines:
         line = line.strip()
-        if line.find(u"|Record:|") >= 0:
+        if line.find("|Record:|") >= 0:
             flds = line.split("|")
             assert flds[1] == "Record:"
             cid = flds[2]  # Commit id.
@@ -807,10 +814,6 @@ def gengraph(opts, fmt):
     """
     if fmt:
         infov(opts, "generating {}".format(fmt))
-        cmd = "dot -T{} -O {}".format(fmt, opts.outfile)
-        if opts.verbose:
-            cmd += " -v"
-        infov(opts, "running command: {}".format(cmd))
-        st, _ = runcmd(cmd, show_output=opts.verbose > 1)
-        if st:
-            err('command failed with status {}: :"'.format(st, cmd))
+
+        # TODO: Use a temporary file to store the dot source.
+        graphviz.render('dot', fmt, opts.outfile)

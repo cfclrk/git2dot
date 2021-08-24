@@ -685,16 +685,18 @@ def main(opts: argparse.Namespace):
     cmdline(opts)
     parse(opts)
 
-    # TODO: this should return a string
+    # TODO: this should return a string or data structure
     gendot(opts)
 
-    # TODO: pass string to these functions
+    # TODO: pass string/object to these functions
     if opts.png:
         gengraph(opts, "png")
     if opts.svg:
         gengraph(opts, "svg")
 
-    # TODO: if outfile is specified, write to that file
+    # TODO:
+    #  - if outfile is specified, write to that file
+    #  - otherwise, write to stdout
 
     infov(opts, "done")
 
