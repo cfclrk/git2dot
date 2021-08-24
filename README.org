@@ -11,8 +11,10 @@ src="https://cloud.githubusercontent.com/assets/2991242/22413672/a3357722-e66e-1
 
 * TODO
 
-  - [ ] Make --png and --svg write a single image to stdout
-    - [ ] Update gendot to return a string
+  - [ ] Remove summary?
+  - [ ] Use logging info/debug instead of checking opts for verbose
+  - [ ] Use pydot to create the dot source
+  - [ ] Use bats for tests
   - [ ] Update --range to be --git-extra-opts or --git-log-extra-opts
   - [ ] GitHub Action that runs tests
   - [ ] Single squash node
@@ -25,18 +27,17 @@ src="https://cloud.githubusercontent.com/assets/2991242/22413672/a3357722-e66e-1
 
   Kinds of nodes:
 
-  - *Commit Node* - A git commit.
+  - *Commit Node* - A commit.
     - Abbrev: =cnode=
     - Default color: bisque (tan)
-  - *Branch Node* - A git branch.
+  - *Branch Node* - A branch.
     - Abbrev: =bnode=
-    - Default color: light blue.
-  - *Merge Node* - Merge commits (commits that have 2 or more children).
+    - Default color: light blue
+  - *Merge Node* - A Merge commit (a commit that has 2 or more parents).
     - Abbrev: =mnode=
-    - Default color: light red.
+    - Default color: light red
   - *Squash Node* - The end-points of a squashed commit chain. Squashed commit
-    chains do not have any branches, tags, change-ids or merges. They are just a
-    long chain of work.
+    chains do not have any branches, tags, change-ids or merges.
     - Abrev: =snode=
     - Default color: dark red
   - *Tag Node* - A git tag.
@@ -48,10 +49,16 @@ src="https://cloud.githubusercontent.com/assets/2991242/22413672/a3357722-e66e-1
 
 * Edges
 
-  - Parent Edge
+  Kinds of edges:
+
+  - Parent Edge - From a node to its parent.
     - Abbrev: =pedge=
-  - Squash Edge - An edge between squash nodes.
+  - Squash Edge - Between squash nodes.
     - Abbrev: =sedge=
+  - Branch Edge - From a branch node to a commit node.
+    - Abbrev: =bedge=
+  - Tag Edge - From a tag node.
+    - Abbrev: =tedge=
 
 * Examples
 

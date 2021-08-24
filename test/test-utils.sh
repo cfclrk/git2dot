@@ -76,9 +76,9 @@ function displayPNG() {
 function Finish() {
     # Popup the display.
     if (( $Display )) ; then
-        displayPNG $Name.dot.png
+        displayPNG out.png
     fi
-    
+
     # Display the git data.
     if (( Keep )) ; then
         echo ""
@@ -128,4 +128,3 @@ if (( Keep )) ; then
         err '.git exists, you must remove it to continue'
     fi
 fi
-

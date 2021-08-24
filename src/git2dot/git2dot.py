@@ -3,10 +3,10 @@ import re
 import subprocess
 import sys
 from textwrap import dedent
-from typing import Tuple
+from typing import Optional, Tuple
 
 import dateutil.parser
-import graphviz
+import pydot
 
 DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"'  # --gitcmd
 DEFAULT_RANGE = "--all --topo-order"  # --range
@@ -577,17 +577,12 @@ def parse(opts):
     Node.m_list_bydate.sort(key=lambda x: Node.m_map[x].m_dts)
 
 
-def gendot(opts):
+def gendot(opts) -> str:
     """
     Generate a test graph.
     """
     # Write out the graph stuff.
     infov(opts, "gendot")
-
-    if opts.outfile:
-        ofp = open(opts.outfile, "w")
-    else:
-        ofp = sys.stdout
 
     # Keep track of the node information so
     # that it can be reported at the end.
@@ -599,7 +594,7 @@ def gendot(opts):
         "total_commits": 0,
     }  # total nodes with no squashing
 
-    ofp.write("digraph G {\n")
+    dot = "digraph G {\n"
     for v in opts.dot_option:
         if len(opts.font_size) and "fontsize=" in v:
             v = re.sub(r"(fontsize=)[^,]+,", r'\1"' + opts.font_size + r'",', v)
@@ -607,40 +602,40 @@ def gendot(opts):
             v = re.sub(
                 r"(fontsize=[^,]+),", r'\1, fontname="' + opts.font_name + r'",', v
             )
-        ofp.write("   {}".format(v))
+        dot += "   {}".format(v)
         if v[-1] != ";":
-            ofp.write(";")
-        ofp.write("\n")
+            dot += ";"
+        dot += "\n"
 
-    ofp.write("\n")
-    ofp.write("   // label cnode, mnode and snodes\n")
+    dot += "\n"
+    dot += "   // label cnode, mnode and snodes\n"
     for nd in Node.m_list:
         if opts.squash and nd.is_squashed():
             continue
         if nd.is_merge_node():
             label = "\\n".join(nd.m_extra)
             attrs = opts.mnode.format(label=label)
-            ofp.write('   "{}" {};\n'.format(nd.m_cid, attrs))
+            dot += '   "{}" {};\n'.format(nd.m_cid, attrs)
             summary["num_graph_merge_nodes"] += 1
             summary["total_graph_commit_nodes"] += 1
             summary["total_commits"] += 1
         elif nd.is_squashed_head() or nd.is_squashed_tail():
             label = "\\n".join(nd.m_extra)
             attrs = opts.snode.format(label=label)
-            ofp.write('   "{}" {};\n'.format(nd.m_cid, attrs))
+            dot += '   "{}" {};\n'.format(nd.m_cid, attrs)
             summary["num_graph_squash_nodes"] += 1
             summary["total_graph_commit_nodes"] += 1
         else:
             label = "\\n".join(nd.m_extra)
             attrs = opts.cnode.format(label=label)
-            ofp.write('   "{}" {};\n'.format(nd.m_cid, attrs))
+            dot += '   "{}" {};\n'.format(nd.m_cid, attrs)
             summary["num_graph_commit_nodes"] += 1
             summary["total_graph_commit_nodes"] += 1
             summary["total_commits"] += 1
 
     infov(opts, "defining edges")
-    ofp.write("\n")
-    ofp.write("   // edges\n")
+    dot += "\n"
+    dot += "   // edges\n"
     for nd in Node.m_list:
         if nd.is_squashed():
             continue
@@ -651,9 +646,7 @@ def gendot(opts):
             # Special handling for squashed head nodes, create
             # a squash edge between the head and tail.
             attrs = opts.sedge.format(label=nd.m_chain_size)
-            ofp.write(
-                '   "{}" -> "{}" {};\n'.format(nd.m_cid, nd.m_chain_tail.m_cid, attrs)
-            )
+            dot += '   "{}" -> "{}" {};\n'.format(nd.m_cid, nd.m_chain_tail.m_cid, attrs)
             summary["total_commits"] += nd.m_chain_size
 
         # Create the edges to the parents.
@@ -664,20 +657,20 @@ def gendot(opts):
                     attrs = opts.mnode_pedge.format(
                         label="{} to {}".format(nd.m_cid, pid)
                     )
-                ofp.write('   "{}" -> "{}" {};\n'.format(pid, nd.m_cid, attrs))
+                dot += '   "{}" -> "{}" {};\n'.format(pid, nd.m_cid, attrs)
             else:
                 if len(opts.cnode_pedge) > 0:
                     attrs = opts.cnode_pedge.format(
                         label="{} to {}".format(nd.m_cid, pid)
                     )
-                ofp.write('   "{}" -> "{}" {};\n'.format(pid, nd.m_cid, attrs))
+                dot += '   "{}" -> "{}" {};\n'.format(pid, nd.m_cid, attrs)
 
     # Annote the tags and branches for each node.
     # Can't use subgraphs because rankdir is not
     # supported.
     infov(opts, "annotating branches and tags")
-    ofp.write("\n")
-    ofp.write("   // annotate branches and tags\n")
+    dot += "\n"
+    dot += "   // annotate branches and tags\n"
     first = True
     for idx, nd in enumerate(Node.m_list):
         # technically this is redundant because squashed nodes, by
@@ -689,7 +682,7 @@ def gendot(opts):
             if first:
                 first = False
             else:
-                ofp.write("\n")
+                dot += "\n"
 
             if len(nd.m_tags) > 0:
                 if opts.crunch:
@@ -697,26 +690,26 @@ def gendot(opts):
                     tid = "tid-{:>08}".format(idx)
                     label = "\\n".join(nd.m_tags)
                     attrs = opts.tnode.format(label=label)
-                    ofp.write('   "{}" {};\n'.format(tid, attrs))
+                    dot += '   "{}" {};\n'.format(tid, attrs)
                     torank += [tid]
 
                     # Write the connecting edge.
-                    ofp.write('   "{}" -> "{}"'.format(tid, nd.m_cid))
+                    dot += '   "{}" -> "{}"'.format(tid, nd.m_cid)
                 else:
                     torank += nd.m_tags
                     for t in nd.m_tags:
                         # Tag node definitions.
                         attrs = opts.tnode.format(label=t)
-                        ofp.write('   "{}+{}" {};\n'.format(nd.m_cid, t, attrs))
+                        dot += '   "{}+{}" {};\n'.format(nd.m_cid, t, attrs)
 
                     tl = nd.m_tags
-                    ofp.write('   "{}+{}"'.format(nd.m_cid, tl[0]))
+                    dot += '   "{}+{}"'.format(nd.m_cid, tl[0])
                     for t in tl[1:]:
-                        ofp.write(' -> "{}+{}"'.format(nd.m_cid, t))
-                    ofp.write(' -> "{}"'.format(nd.m_cid))
+                        dot += ' -> "{}+{}"'.format(nd.m_cid, t)
+                    dot += ' -> "{}"'.format(nd.m_cid)
 
                 attrs = opts.tedge.format(label=nd.m_cid)
-                ofp.write(" {};\n".format(attrs))
+                dot += " {};\n".format(attrs)
 
             if len(nd.m_branches) > 0:
                 if opts.crunch:
@@ -724,39 +717,39 @@ def gendot(opts):
                     bid = "bid-{:>08}".format(idx)
                     label = "\\n".join(nd.m_branches)
                     attrs = opts.bnode.format(label=label)
-                    ofp.write('   "{}" {};\n'.format(bid, attrs))
+                    dot += '   "{}" {};\n'.format(bid, attrs)
                     torank += [bid]
 
                     # Write the connecting edge.
-                    ofp.write('   "{}" -> "{}"'.format(nd.m_cid, bid))
+                    dot += '   "{}" -> "{}"'.format(nd.m_cid, bid)
                 else:
                     torank += nd.m_branches
                     for b in nd.m_branches:
                         # Branch node definitions.
                         attrs = opts.bnode.format(label=b)
-                        ofp.write('   "{}+{}" {};\n'.format(nd.m_cid, b, attrs))
+                        dot += '   "{}+{}" {};\n'.format(nd.m_cid, b, attrs)
 
-                    ofp.write('   "{}"'.format(nd.m_cid))
+                    dot += '   "{}"'.format(nd.m_cid)
                     for b in nd.m_branches[::-1]:
-                        ofp.write(' -> "{}+{}"'.format(nd.m_cid, b))
+                        dot += ' -> "{}+{}"'.format(nd.m_cid, b)
 
                 attrs = opts.bedge.format(label=nd.m_cid)
-                ofp.write(" {};\n".format(attrs))
+                dot += " {};\n".format(attrs)
 
             # Make sure that they line up by putting them in the same rank.
-            ofp.write('   {{rank=same; "{}"'.format(torank[0]))
+            dot += '   {{rank=same; "{}"'.format(torank[0])
             for cid in torank[1:]:
                 if opts.crunch:
-                    ofp.write('; "{}"'.format(cid))
+                    dot += '; "{}"'.format(cid)
                 else:
-                    ofp.write('; "{}+{}"'.format(nd.m_cid, cid))
-            ofp.write("};\n")
+                    dot += '; "{}+{}"'.format(nd.m_cid, cid)
+            dot += "};\n"
 
     # Align nodes by commit date.
     if opts.align_by_date != "none":
         infov(opts, "align by {}".format(opts.align_by_date))
-        ofp.write("\n")
-        ofp.write("   // rank by date using invisible constraints between groups\n")
+        dot += "\n"
+        dot += "   // rank by date using invisible constraints between groups\n"
         lnd = Node.m_map[Node.m_list_bydate[0]]
 
         attrs = ["year", "month", "day", "hour", "minute", "second"]
@@ -777,9 +770,8 @@ def gendot(opts):
                                 lnd.m_cid, lnd.m_dts, nd.m_cid, nd.m_dts
                             )
                         )
-                    ofp.write(
-                        '   "{}" -> "{}" [style=invis];\n'.format(lnd.m_cid, nd.m_cid)
-                    )
+                    dot += '   "{}" -> "{}" [style=invis];\n'.format(lnd.m_cid, nd.m_cid)
+
                 elif v1 > v2:
                     break
                 if attr == opts.align_by_date:
@@ -791,30 +783,30 @@ def gendot(opts):
     # Output the graph label.
     if opts.graph_label is not None:
         infov(opts, "generate graph label")
-        ofp.write("\n")
-        ofp.write("   // graph label\n")
-        ofp.write("   {}".format(opts.graph_label))
+        dot += "\n"
+        dot += "   // graph label\n"
+        dot += "   {}".format(opts.graph_label)
 
         if opts.graph_label[-1] != ";":
-            ofp.write(";")
-        ofp.write("\n")
+            dot += ";"
+        dot += "\n"
 
-    ofp.write("}\n")
+    dot += "}\n"
 
     # Output the summary data.
     for k in sorted(summary, key=str.lower):
         v = summary[k]
-        ofp.write("// summary:{} {}\n".format(k, v))
-    ofp.close()
+        dot += "// summary:{} {}\n".format(k, v)
+    return dot
 
 
-# TODO: accept dot source as a param
-def gengraph(opts, fmt):
+def gengraph(opts, dot: str, fmt: Optional[str]) -> bytes:
     """
     Generate the graph file using dot with -O option.
     """
-    if fmt:
-        infov(opts, "generating {}".format(fmt))
-
-        # TODO: Use a temporary file to store the dot source.
-        graphviz.render('dot', fmt, opts.outfile)
+    infov(opts, "generating {}".format(fmt))
+    graphs = pydot.graph_from_dot_data(dot)
+    graph = graphs[0]
+    if fmt == "svg":
+        return graph.create_svg()
+    return graph.create_png()
