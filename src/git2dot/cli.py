@@ -1,8 +1,15 @@
 import argparse
 import sys
 
+import logging.config
+import logging
+
 from git2dot import __summary__, __version__
-from git2dot.git2dot import parse, gendot, gengraph, infov
+from git2dot.logging_config import CONFIG
+from git2dot.git2dot import parse, gendot, gengraph
+
+logging.config.dictConfig(CONFIG)
+log = logging.getLogger(__name__)
 
 DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"'  # --gitcmd
 DEFAULT_RANGE = "--all --topo-order"  # --range
@@ -327,12 +334,8 @@ Default: %(default)s
     other.add_argument(
         "-v",
         "--verbose",
-        action="count",
-        default=0,
-        help="""Increase the level of verbosity.
--v    shows the basic steps
--v -v shows a lot of output for debugging
- """,
+        action="store_true",
+        help="Print info level logs to stdout",
     )
 
     other.add_argument(
@@ -560,6 +563,10 @@ def cli() -> None:
     """
     parser = arg_parser()
     args = parser.parse_args()
+
+    if args.verbose:
+        log.setLevel(logging.INFO)
+
     main(args)
 
 
@@ -581,7 +588,7 @@ def main(opts: argparse.Namespace):
     else:
         sys.stdout.buffer.write(out)
 
-    infov(opts, "done")
+    log.info("done")
 
 
 if __name__ == "__main__":

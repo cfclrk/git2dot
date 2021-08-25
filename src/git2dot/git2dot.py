@@ -4,9 +4,12 @@ import subprocess
 import sys
 from textwrap import dedent
 from typing import Optional, Tuple
+import logging
 
 import dateutil.parser
 import pydot
+
+log = logging.getLogger(__name__)
 
 DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"'  # --gitcmd
 DEFAULT_RANGE = "--all --topo-order"  # --range
@@ -166,29 +169,7 @@ class Node:
                 self.m_children = self.m_children[:i] + self.m_children[i + 1 :]
 
 
-def info(msg, lev=1):
-    """Print an informational message with the source line number."""
-    print("// INFO:{} {}".format(inspect.stack()[lev][2], msg))
-
-
-def infov(opts, msg, lev=1):
-    """Print an informational message with the source line number."""
-    if opts.verbose > 0:
-        print("// INFO:{} {}".format(inspect.stack()[lev][2], msg))
-
-
-def warn(msg, lev=1):
-    """Print a warning  message with the source line number."""
-    print("// WARNING:{} {}".format(inspect.stack()[lev][2], msg))
-
-
-def err(msg, lev=1):
-    """Print an error message and exit."""
-    sys.stderr.write("// ERROR:{} {}\n".format(inspect.stack()[lev][2], msg))
-    sys.exit(1)
-
-
-def runcmd(cmd: str, show_output=True) -> Tuple[int, str]:
+def runcmd(cmd: str) -> Tuple[int, str]:
     """Execute cmd as a subprocess.
 
     Return the stdout and exit status.
@@ -214,9 +195,6 @@ def runcmd(cmd: str, show_output=True) -> Tuple[int, str]:
         print(msg)
         raise
 
-    if show_output:
-        print(proc.stdout)
-
     return proc.returncode, proc.stdout
 
 
@@ -228,7 +206,7 @@ def read(opts):
     (-i).
     """
     # Run the git command.
-    infov(opts, "reading git repo data")
+    log.info("Reading git repo data")
     out = ""
     if opts.input != "":
         # The user specified a file that contains the input data
@@ -237,7 +215,8 @@ def read(opts):
             with open(opts.input, "r") as ifp:
                 out = ifp.read()
         except IOError as e:
-            err("input read failed: {}".format(e))
+            log.fatal("input read failed: {}".format(e))
+            sys.exit(1)
     else:
         # The user chose to run a git command.
         cmd = opts.gitcmd
@@ -261,30 +240,32 @@ def read(opts):
             # If the user specified a custom command then we
             # do not allow the user options to affect it.
             if opts.cnode_label != "":
-                warn("-l <label> ignored when -g is specified")
+                log.warn("-l <label> ignored when -g is specified")
             if opts.since != "":
-                warn("--since ignored when -g is specified")
+                log.warn("--since ignored when -g is specified")
             if opts.until != "":
-                warn("--until ignored when -g is specified")
+                log.warn("--until ignored when -g is specified")
             if opts.range != DEFAULT_RANGE:
-                warn("--range ignored when -g is specified")
+                log.warn("--range ignored when -g is specified")
 
-        infov(opts, "running command: {}".format(cmd))
-        st, out = runcmd(cmd, show_output=opts.verbose > 1)
+        log.info("running command: {}".format(cmd))
+        st, out = runcmd(cmd)
         if st:
-            err("Command failed: {}\n{}".format(cmd, out))
-        infov(opts, "read {:,} bytes".format(len(out)))
+            log.fatal("Command failed: {}\n{}".format(cmd, out))
+            sys.exit(1)
+        log.info("read {:,} bytes".format(len(out)))
 
     if opts.keep is True:
         # The user decided to keep the generated output for
         # re-use.
         ofn = opts.outfile + ".keep"
-        infov(opts, "writing command output to {}".format(ofn))
+        log.info("writing command output to {}".format(ofn))
         try:
             with open(ofn, "w") as ofp:
                 ofp.write(out)
         except IOError as e:
-            err("unable to write to {}: {}".format(ofn, e))
+            log.fatal("unable to write to {}: {}".format(ofn, e))
+            sys.exit(1)
 
     return out.splitlines()
 
@@ -294,7 +275,7 @@ def prune_by_date(opts):
     Prune by date is --since, --until or --range were specified.
     """
     if opts.since != "" or opts.until != "" or opts.range != "":
-        infov(opts, "pruning parents")
+        log.info("pruning parents")
         nump = 0
         numt = 0
         for i, nd in enumerate(Node.m_list):
@@ -308,7 +289,7 @@ def prune_by_date(opts):
             if len(np) < len(nd.m_parents):  # pruned
                 Node.m_list[i].m_parents = np
                 Node.m_map[nd.m_cid].m_parents = np
-        infov(opts, "pruned {:,} parent node references out of {:,}".format(nump, numt))
+        log.info("pruned {:,} parent node references out of {:,}".format(nump, numt))
 
 
 def prune_by_choice(opts):
@@ -334,7 +315,7 @@ def prune_by_choice(opts):
         #        just prior to delete a node, remove it from child list
         #        of its parents and from the parent list of its children.
         #        make sure that all m_idx settings are correctly updated.
-        infov(opts, "pruning graph based on choices")
+        log.info("pruning graph based on choices")
         bs = {}
         ts = {}
 
@@ -360,10 +341,10 @@ def prune_by_choice(opts):
         # Warn if any were not found.
         for b, a in sorted(bs.items()):
             if len(a) == 0:
-                warn('--choose-branch not found: "{}"'.format(b))
+                log.warn('--choose-branch not found: "{}"'.format(b))
         for t, a in sorted(ts.items()):
             if len(a) == 0:
-                warn('--choose-branch not found: "{}"'.format(t))
+                log.warn('--choose-branch not found: "{}"'.format(t))
 
         # At this point all of the branches and tags have been found.
         def get_parents(idx, parents):
@@ -396,10 +377,10 @@ def prune_by_choice(opts):
                     get_parents(idx, parents)
 
         pruning = len(Node.m_list) - len(parents)
-        infov(opts, "keeping {:,}".format(len(parents)))
-        infov(opts, "pruning {:,}".format(pruning))
+        log.info("keeping {:,}".format(len(parents)))
+        log.info("pruning {:,}".format(pruning))
         if pruning == 0:
-            warn("nothing to prune")
+            log.warn("nothing to prune")
             return
 
         # We now have all of the nodes that we want to keep.
@@ -433,18 +414,18 @@ def prune_by_choice(opts):
             Node.m_list[i].m_idx = i
             Node.m_map[nd.m_cid].m_idx = i
 
-        infov(opts, "remaining {:,}".format(len(Node.m_list)))
+        log.info("remaining {:,}".format(len(Node.m_list)))
 
 
 def parse(opts):
     """
     Parse the node data.
     """
-    infov(opts, "loading nodes (commit data)")
+    log.info("loading nodes (commit data)")
     nd = None
     lines = read(opts)
 
-    infov(opts, "parsing read data")
+    log.info("parsing read data")
     for line in lines:
         line = line.strip()
         if line.find("|Record:|") >= 0:
@@ -458,7 +439,8 @@ def parse(opts):
             try:
                 dts = dateutil.parser.parse(flds[5])
             except:
-                err("unrecognized date format: {}\n\tline: {}".format(flds[5], line))
+                log.fatal("unrecognized date format: {}\n\tline: {}".format(flds[5], line))
+                sys.exit(1)
             if len(refs):
                 # branches and tags
                 if refs[0] == "(" and refs[-1] == ")":
@@ -540,14 +522,15 @@ def parse(opts):
                     setval(idx, th, fld)
 
     if len(Node.m_list) == 0:
-        err("no records found")
+        log.fatal("no records found")
+        sys.exit(1)
 
     prune_by_date(opts)
     prune_by_choice(opts)
 
     # Update the child list for each node by looking at the parents.
     # This helps us identify merge nodes.
-    infov(opts, "updating children")
+    log.info("updating children")
     num_edges = 0
     for nd in Node.m_list:
         for p in nd.m_parents:
@@ -555,24 +538,23 @@ def parse(opts):
             Node.m_map[p].m_children.append(nd)
 
     # Summary of initial read.
-    infov(opts, "found {:,} commit nodes".format(len(Node.m_list)))
-    infov(opts, "found {:,} commit edges".format(num_edges))
-    if opts.verbose:
-        for var in Node.m_vars_usage:
-            info(
-                'found {:,} nodes with values for variable "{}"'.format(
-                    len(Node.m_vars_usage[var]), var
-                )
+    log.info("found {:,} commit nodes".format(len(Node.m_list)))
+    log.info("found {:,} commit edges".format(num_edges))
+    for var in Node.m_vars_usage:
+        log.info(
+            'found {:,} nodes with values for variable "{}"'.format(
+                len(Node.m_vars_usage[var]), var
             )
+        )
 
     # Squash nodes.
     if opts.squash:
-        infov(opts, "squashing chains")
+        log.info("squashing chains")
         Node.squash()
 
     # Create the bydate list to enable ranking using invisible
     # constraints.
-    infov(opts, "sorting by date")
+    log.info("sorting by date")
     Node.m_list_bydate = [nd.m_cid for nd in Node.m_list]
     Node.m_list_bydate.sort(key=lambda x: Node.m_map[x].m_dts)
 
@@ -582,7 +564,7 @@ def gendot(opts) -> str:
     Generate a test graph.
     """
     # Write out the graph stuff.
-    infov(opts, "gendot")
+    log.info("gendot")
 
     # Keep track of the node information so
     # that it can be reported at the end.
@@ -633,7 +615,7 @@ def gendot(opts) -> str:
             summary["total_graph_commit_nodes"] += 1
             summary["total_commits"] += 1
 
-    infov(opts, "defining edges")
+    log.info("defining edges")
     dot += "\n"
     dot += "   // edges\n"
     for nd in Node.m_list:
@@ -668,7 +650,7 @@ def gendot(opts) -> str:
     # Annote the tags and branches for each node.
     # Can't use subgraphs because rankdir is not
     # supported.
-    infov(opts, "annotating branches and tags")
+    log.info("annotating branches and tags")
     dot += "\n"
     dot += "   // annotate branches and tags\n"
     first = True
@@ -747,7 +729,7 @@ def gendot(opts) -> str:
 
     # Align nodes by commit date.
     if opts.align_by_date != "none":
-        infov(opts, "align by {}".format(opts.align_by_date))
+        log.info("align by {}".format(opts.align_by_date))
         dot += "\n"
         dot += "   // rank by date using invisible constraints between groups\n"
         lnd = Node.m_map[Node.m_list_bydate[0]]
@@ -762,14 +744,13 @@ def gendot(opts) -> str:
                 v1 = getattr(nd.m_dts, attr)
                 v2 = getattr(lnd.m_dts, attr)
                 if v1 < v2:
-                    # Add an invisible constraint to guarantee that the
-                    # later node appears somewhere to the right.
-                    if opts.verbose > 1:
-                        info(
-                            "aligning {} {} to the left of {} {}".format(
-                                lnd.m_cid, lnd.m_dts, nd.m_cid, nd.m_dts
-                            )
+                    # Add an invisible constraint to guarantee that the later node
+                    # appears somewhere to the right.
+                    log.info(
+                        "aligning {} {} to the left of {} {}".format(
+                            lnd.m_cid, lnd.m_dts, nd.m_cid, nd.m_dts
                         )
+                    )
                     dot += '   "{}" -> "{}" [style=invis];\n'.format(lnd.m_cid, nd.m_cid)
 
                 elif v1 > v2:
@@ -782,7 +763,7 @@ def gendot(opts) -> str:
 
     # Output the graph label.
     if opts.graph_label is not None:
-        infov(opts, "generate graph label")
+        log.info("generate graph label")
         dot += "\n"
         dot += "   // graph label\n"
         dot += "   {}".format(opts.graph_label)
@@ -804,7 +785,7 @@ def gengraph(opts, dot: str, fmt: Optional[str]) -> bytes:
     """
     Generate the graph file using dot with -O option.
     """
-    infov(opts, "generating {}".format(fmt))
+    log.info("generating {}".format(fmt))
     graphs = pydot.graph_from_dot_data(dot)
     graph = graphs[0]
     if fmt == "svg":
