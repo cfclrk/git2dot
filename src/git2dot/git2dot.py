@@ -197,7 +197,6 @@ def runcmd(cmd: str) -> Tuple[int, str]:
 
     return proc.returncode, proc.stdout
 
-
 def read(opts):
     """
     Read the input data.
@@ -563,9 +562,6 @@ def gendot(opts) -> str:
     """
     Generate a test graph.
     """
-    # Write out the graph stuff.
-    log.info("gendot")
-
     # Keep track of the node information so
     # that it can be reported at the end.
     summary = {

@@ -1,15 +1,11 @@
 import argparse
-import sys
-
-import logging.config
 import logging
+import logging.config
 
-from git2dot import __summary__, __version__
-from git2dot.logging_config import CONFIG
-from git2dot.git2dot import parse, gendot, gengraph
+from git2dot import __summary__, __version__, logging_config, main
 
-logging.config.dictConfig(CONFIG)
 log = logging.getLogger(__name__)
+
 
 DEFAULT_GITCMD = 'git log --format="|Record:|%h|%p|%d|%ci%n%b"'  # --gitcmd
 DEFAULT_RANGE = "--all --topo-order"  # --range
@@ -561,34 +557,16 @@ def cli() -> None:
 
     This is the interactive (CLI) entry-point to the program.
     """
-    parser = arg_parser()
-    args = parser.parse_args()
+    # When using the CLI, initialize logging
+    logging.config.dictConfig(logging_config.CONFIG)
 
-    if args.verbose:
+    cli_parser = arg_parser()
+    cli_args = cli_parser.parse_args()
+
+    if cli_args.verbose:
         log.setLevel(logging.INFO)
 
-    main(args)
-
-
-# TODO: main should take a dict
-def main(opts: argparse.Namespace):
-    parse(opts)
-
-    dot = gendot(opts)
-    out = dot.encode("utf-8")
-
-    if opts.png:
-        out = gengraph(opts, dot, "png")
-    if opts.svg:
-        out = gengraph(opts, dot, "svg")
-
-    if opts.outfile:
-        with open(opts.outfile, "wb") as f:
-            f.write(out)
-    else:
-        sys.stdout.buffer.write(out)
-
-    log.info("done")
+    main.main(cli_args)
 
 
 if __name__ == "__main__":

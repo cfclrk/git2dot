@@ -12,7 +12,6 @@ directory.
 * TODO
 
   - [ ] Remove summary?
-  - [ ] Use logging info/debug instead of checking opts for verbose
   - [ ] Use pydot to create the dot source
   - [ ] Use bats for tests
   - [ ] Update --range to be --git-extra-opts or --git-log-extra-opts
@@ -22,6 +21,12 @@ directory.
     git commit SHAs)
     - Probably a =--msg= flag, which puts the commit message in the node instead
       of the git hash.
+
+** git log
+
+   Just have one option for modifying git log: =--git-log-opts=. There you can
+   pass ="--branches"=, ="--tags"=, ="--since"=, ... anything that filters the
+   git log. You can do anything except for changing the log format.
 
 * Nodes
 
